@@ -1,0 +1,99 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Default Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Primitives
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
+    function isAdmin() { 
+      return isSignedIn() && (
+        (request.auth.token.email == 'adolamer9@gmail.com' && (request.auth.token.email_verified == true)) || 
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid))
+      ); 
+    }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Validation Blueprint for User
+    function isValidUser(data) {
+      return data.keys().hasAll(['points', 'level', 'dailyZikrsCompleted', 'totalTasbihCount', 'badges', 'updatedAt']) &&
+             data.keys().size() == 6 &&
+             data.points is number && data.points >= 0 &&
+             data.level is number && data.level >= 1 &&
+             data.dailyZikrsCompleted is number && data.dailyZikrsCompleted >= 0 &&
+             data.totalTasbihCount is number && data.totalTasbihCount >= 0 &&
+             data.badges is list &&
+             data.updatedAt is string;
+    }
+
+    function isValidZikrStat(data) {
+      return data.keys().hasAll(['id', 'title', 'viewCount', 'lastViewed']) &&
+             data.keys().size() == 4 &&
+             data.id is string &&
+             data.title is string &&
+             data.viewCount is number &&
+             data.lastViewed is string;
+     }
+
+    function isValidHadithCount(data) {
+      return data.keys().hasAll(['count']) &&
+             data.keys().size() == 1 &&
+             data.count is number;
+    }
+
+    function isValidHadith(data) {
+      return data.keys().hasAll(['arabic', 'kurdish', 'source', 'reference', 'topic', 'createdAt']) &&
+             data.keys().size() >= 6 &&
+             data.arabic is string && data.arabic.size() <= 5000 &&
+             data.kurdish is string && data.kurdish.size() <= 5000 &&
+             data.source is string &&
+             data.reference is string &&
+             data.topic is string &&
+             data.createdAt is string;
+    }
+
+    match /users/{userId} {
+      allow get: if isOwner(userId) || isAdmin();
+      allow list: if isAdmin(); 
+      
+      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      
+      allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidUser(incoming()) && (
+        // Action: Sync Stats
+        (incoming().diff(existing()).affectedKeys().hasOnly(['points', 'level', 'dailyZikrsCompleted', 'totalTasbihCount', 'badges', 'updatedAt']))
+      );
+      
+      allow delete: if isAdmin();
+    }
+
+    match /zikr_stats/{zikrId} {
+      allow read: if true;
+      allow create: if isValidId(zikrId) && isValidZikrStat(incoming());
+      allow update: if (isValidId(zikrId) && isValidZikrStat(incoming())) && (
+         (incoming().diff(existing()).affectedKeys().hasOnly(['viewCount', 'lastViewed']))
+      ) || isAdmin();
+    }
+
+    match /hadith_counts/{sourceId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(sourceId) && isValidHadithCount(incoming());
+    }
+
+    match /hadiths/{hadithId} {
+      allow read: if true;
+      allow write: if isAdmin() && isValidId(hadithId) && isValidHadith(incoming());
+    }
+
+    match /admins/{adminId} {
+      // Allow user to check their own admin status
+      allow get: if isOwner(adminId);
+      allow list: if false;
+      allow write: if false;
+    }
+  }
+}

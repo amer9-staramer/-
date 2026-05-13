@@ -1,0 +1,66 @@
+{
+  "sahih_bukhari": [
+    {
+      "id": 1,
+      "chapter": "بەدیهێنانی وەحی / Revelation",
+      "narrator": "عُمَرَ بْنَ الْخَطَّابِ (رضي الله عنه)",
+      "text_ar": "«إِنَّمَا الأَعْمَالُ بِالنِّيَّاتِ، وَإِنَّمَا لِكُلِّ امْرِئٍ مَا نَوَى...»",
+      "text_ku": "بەڕاستی کردەوەکان تەنها بە پێی نییەتەکانن، و بۆ هەر مرۆڤێکیش ئەوە هەیە کە نییەتی بۆ هێناوە...",
+      "text_en": "Actions are but by intentions and every man shall have only that which he intended..."
+    },
+    {
+      "id": 2,
+      "chapter": "پایەکانی ئیسلام / Pillars of Islam",
+      "narrator": "عَبْدِ اللَّهِ بْنِ عُمَرَ (رضي الله عنهما)",
+      "text_ar": "«بُنِيَ الإِسْلامُ عَلَى خَمْسٍ: شَهَادَةِ أَنْ لا إِلَهَ إِلا اللَّهُ وَأَنَّ مُحَمَّدًا رَسُولُ اللَّهِ، وَإِقَامِ الصَّلاةِ، وَإِيتَاءِ الزَّكَاةِ، وَالْحَجِّ، وَصَوْمِ رَمَضَانَ»",
+      "text_ku": "ئیسلام لەسەر پێنج پایە دامەزراوە: شایەتومان، نوێژ کردن، زەکات، حەج، و ڕۆژووی ڕەمەزان.",
+      "text_en": "Islam is based on five (pillars): Testimony of faith, Prayer, Zakat, Hajj, and Fasting in Ramadan."
+    },
+    {
+      "id": 10,
+      "chapter": "باوەڕ / Faith",
+      "narrator": "عَبْدِ اللَّهِ بْنِ عَمْرٍو (رضي الله عنه)",
+      "text_ar": "«الْمُسْلِمُ مَنْ سَلِمَ الْمُسْلِمُونَ مِنْ لِسَانِهِ وَيَدِهِ»",
+      "text_ku": "موسڵمان ئەو کەسەیە کە موسڵمانان لە دەست و زمانی پارێزراو بن.",
+      "text_en": "A Muslim is the one from whose tongue and hands the Muslims are safe."
+    }
+  ],
+  "sahih_muslim": [
+    {
+      "id": 1,
+      "chapter": "ئیمان / Faith",
+      "narrator": "تَمِيمٍ الدَّارِيِّ (رضي الله عنه)",
+      "text_ar": "«الدِّينُ النَّصِيحَةُ»",
+      "text_ku": "ئایین ئامۆژگارییە.",
+      "text_en": "The Deen (religion) is sincere advice."
+    },
+    {
+      "id": 2564,
+      "chapter": "چاکە و پەیوەندی / Virtue",
+      "narrator": "أَبِي هُرَيْرَةَ (رضي الله عنه)",
+      "text_ar": "«إِنَّ اللَّهَ لا يَنْظُرُ إِلَى صُوَرِكُمْ وَأَمْوَالِكُمْ وَلَكِنْ يَنْظُرُ إِلَى قُلُوبِكُمْ وَأَعْمَالِكُمْ»",
+      "text_ku": "بەڕاستی خودا سەیری ڕوخسار و ماڵتان ناکات، بەڵکو سەیری دڵ و کردەوەکانتان دەکات.",
+      "text_en": "Verily, Allah does not look at your appearance or wealth, but He looks at your hearts and your deeds."
+    }
+  ],
+  "sunan_abi_dawood": [
+    {
+      "id": 1,
+      "chapter": "دەستنوێژ / Purification",
+      "narrator": "أَنَسِ بْنِ مَالِكٍ (رضي الله عنه)",
+      "text_ar": "«كَانَ رَسُولُ اللَّهِ ﷺ إِذَا دَخَلَ الْخَلاءَ قَالَ: اللَّهُمَّ إِنِّي أَعُوذُ بِكَ مِنَ الْخُبُثِ وَالْخَبَائِثِ»",
+      "text_ku": "پێغەمبەر ﷺ کاتێک دەچووە سەرئاو دەیفەرموو: خودایە پەنات پێ دەگرم لە شەیتانە نێر و مێیەکان.",
+      "text_en": "When the Messenger of Allah ﷺ entered the toilet, he used to say: O Allah, I seek refuge in Thee from the male and female devils."
+    }
+  ],
+  "sunan_at_tirmidhi": [
+    {
+      "id": 1,
+      "chapter": "زانیاری / Knowledge",
+      "narrator": "أَبي هُرَيْرَةَ (رضي الله عنه)",
+      "text_ar": "«الْكَلِمَةُ الْحِكْمَةُ ضَالَّةُ الْمُؤْمِنِ، فَحَيْثُ وَجَدَهَا فَهُوَ أَحَقُّ بِهَا»",
+      "text_ku": "وشەی حیکمەت و دانایی ونبووی باوەڕدارە، لە هەر شوێنێک بیدۆزێتەوە ئەو لە هەموو کەس شایستەترە پێی.",
+      "text_en": "The wise word is the lost property of the believer, so wherever he finds it, he has more right to it."
+    }
+  ]
+}

@@ -1,0 +1,85 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User statistics and progress",
+      "type": "object",
+      "properties": {
+        "points": { "type": "number" },
+        "level": { "type": "number" },
+        "dailyZikrsCompleted": { "type": "number" },
+        "totalTasbihCount": { "type": "number" },
+        "badges": { "type": "array", "items": { "type": "string" } },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["points", "level", "dailyZikrsCompleted", "totalTasbihCount", "badges", "updatedAt"]
+    },
+    "Admin": {
+      "title": "Admin",
+      "description": "Admin users",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" }
+      },
+      "required": ["email"]
+    },
+    "ZikrStat": {
+      "title": "Zikr Stat",
+      "description": "Tracking views for specific zikrs",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string" },
+        "title": { "type": "string" },
+        "viewCount": { "type": "number" },
+        "lastViewed": { "type": "string", "format": "date-time" }
+      },
+      "required": ["id", "title", "viewCount", "lastViewed"]
+    },
+    "HadithCount": {
+      "title": "Hadith Count",
+      "description": "Tracking number of hadiths in each source",
+      "type": "object",
+      "properties": {
+        "count": { "type": "number" }
+      },
+      "required": ["count"]
+    },
+    "Hadith": {
+      "title": "Hadith",
+      "description": "Individual hadith record",
+      "type": "object",
+      "properties": {
+        "arabic": { "type": "string" },
+        "kurdish": { "type": "string" },
+        "english": { "type": "string" },
+        "source": { "type": "string" },
+        "reference": { "type": "string" },
+        "topic": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["arabic", "kurdish", "source", "reference", "topic", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "Stores user stats"
+    },
+    "/admins/{adminId}": {
+      "schema": "Admin",
+      "description": "Stores admin records"
+    },
+    "/zikr_stats/{zikrId}": {
+      "schema": "ZikrStat",
+      "description": "Stores view counts for zikrs"
+    },
+    "/hadith_counts/{sourceId}": {
+      "schema": "HadithCount",
+      "description": "Stores counts for hadith sources"
+    },
+    "/hadiths/{hadithId}": {
+      "schema": "Hadith",
+      "description": "Stores individual hadiths"
+    }
+  }
+}
