@@ -89,6 +89,7 @@ export function useUserStats() {
   }, []);
 
   const syncWithFirestore = async (uid: string) => {
+    if (!uid) return;
     const path = `users/${uid}`;
     try {
       const userDoc = await getDoc(doc(db, 'users', uid));
@@ -113,7 +114,7 @@ export function useUserStats() {
         });
       }
     } catch (err) {
-      handleFirestoreError(err, OperationType.WRITE, path);
+      console.warn("Firestore syncing failed (offline or unauthenticated):", err);
     }
   };
 
@@ -128,7 +129,7 @@ export function useUserStats() {
             updatedAt: new Date().toISOString()
           }, { merge: true });
         } catch (err) {
-          handleFirestoreError(err, OperationType.WRITE, path);
+          console.warn("Firestore save failed (offline or unauthenticated):", err);
         }
       };
       updateRef();

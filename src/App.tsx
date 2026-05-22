@@ -186,8 +186,13 @@ export default function App() {
         if (u.email === 'adolamer9@gmail.com') {
           setIsAdmin(true);
         } else {
-          const adminDoc = await getDoc(doc(db, 'admins', u.uid));
-          setIsAdmin(adminDoc.exists());
+          try {
+            const adminDoc = await getDoc(doc(db, 'admins', u.uid));
+            setIsAdmin(adminDoc.exists());
+          } catch (err) {
+            console.error("Error verifying admin status:", err);
+            setIsAdmin(false);
+          }
         }
       } else {
         setIsAdmin(false);
