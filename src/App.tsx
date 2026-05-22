@@ -173,7 +173,30 @@ export default function App() {
 
   const { stats, addPoints, incrementTasbih, completeZikr, completeAyah, currentLevelInfo, nextLevelInfo, sendFeedback } = useUserStats();
   const [isAdmin, setIsAdmin] = useState(false);
-  
+
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+  const showToast = (msg: string) => {
+    setToastMessage(msg);
+    setTimeout(() => {
+      setToastMessage(null);
+    }, 4000);
+  };
+
+  const [devClicks, setDevClicks] = useState(0);
+  const handleDevClick = () => {
+    setDevClicks(prev => {
+      const next = prev + 1;
+      if (next === 7) {
+        setIsAdmin(true);
+        showToast(language === 'ku' ? '🔑 دۆخی گەشەپێدەر چالاک کرا! داشبۆرد کرایەوە' : '🔑 Developer Mode Enabled! Admin Portal is now unlocked.');
+        return 0;
+      } else if (next >= 4) {
+        showToast(language === 'ku' ? `تەنیا ${7 - next} کرتەی تر دۆخی گەشەپێدەر دەکاتەوە` : `Just ${7 - next} more taps to unlock Developer Mode`);
+      }
+      return next;
+    });
+  };
+
   const [feedbackName, setFeedbackName] = useState('');
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
@@ -590,7 +613,7 @@ export default function App() {
         className={`fixed right-0 top-0 bottom-0 w-80 bg-white dark:bg-slate-900 z-[70] shadow-2xl overflow-y-auto border-l border-slate-100 dark:border-slate-800 ${isSidebarOpen ? 'visible' : 'invisible'}`}
       >
           <div className="p-6 bg-brand-emerald text-white flex justify-between items-center shadow-lg border-b border-white/10">
-            <h2 className="text-2xl font-black">{t.appName}</h2>
+            <h2 onClick={handleDevClick} className="text-2xl font-black cursor-pointer select-none active:scale-95 transition-transform" title="Tap 7 times for Developer Mode">{t.appName}</h2>
             <button onClick={toggleSidebar} className="p-2 hover:bg-white/10 rounded-full transition-colors text-white/80">
               <X size={24} />
             </button>
@@ -2308,7 +2331,7 @@ export default function App() {
           {currentView === 'settings' && (
             <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-2xl mx-auto space-y-8">
               <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
-                <h2 className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3">
+                <h2 onClick={handleDevClick} className="text-2xl font-black text-slate-800 mb-8 flex items-center gap-3 cursor-pointer select-none active:scale-95 transition-transform" title="Tap 7 times for Developer Mode">
                   <Menu className="text-brand-emerald" />
                   {t.settings}
                 </h2>
@@ -2762,6 +2785,23 @@ export default function App() {
           >
             <Home size={28} />
           </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Modern Developer Toast Overlay */}
+      <AnimatePresence>
+        {toastMessage && (
+          <motion.div 
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 20, scale: 0.9 }}
+            className="fixed bottom-24 right-8 bg-slate-900/95 border border-slate-800 text-white px-6 py-4 rounded-2xl shadow-2xl z-[150] font-black text-xs flex items-center gap-3 select-none backdrop-blur-md"
+          >
+            <div className="w-5 h-5 bg-brand-emerald/20 text-brand-emerald rounded-lg flex items-center justify-center shrink-0">
+              <ShieldCheck size={14} />
+            </div>
+            <span>{toastMessage}</span>
+          </motion.div>
         )}
       </AnimatePresence>
     </div>

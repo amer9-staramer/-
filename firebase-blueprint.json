@@ -10,7 +10,12 @@
         "dailyZikrsCompleted": { "type": "number" },
         "totalTasbihCount": { "type": "number" },
         "badges": { "type": "array", "items": { "type": "string" } },
-        "updatedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "deviceId": { "type": "string" },
+        "totalDhikrs": { "type": "number" },
+        "currentLevel": { "type": "number" },
+        "lastActive": { "type": "string", "format": "date-time" },
+        "status": { "type": "string" }
       },
       "required": ["points", "level", "dailyZikrsCompleted", "totalTasbihCount", "badges", "updatedAt"]
     },

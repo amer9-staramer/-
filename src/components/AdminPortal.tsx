@@ -76,6 +76,25 @@ interface Hadith {
   createdAt: string;
 }
 
+const getUserDhikrs = (u: any) => {
+  if (!u) return 0;
+  return u.totalDhikrs !== undefined ? u.totalDhikrs : ((u.totalTasbihCount || 0) + (u.totalZikrsCompleted || 0));
+};
+
+const getUserLevel = (u: any) => {
+  if (!u) return 1;
+  return u.currentLevel !== undefined ? u.currentLevel : Math.min(100, Math.max(1, Math.floor(Math.sqrt(getUserDhikrs(u) * 1.5)) + 1));
+};
+
+const isUserOnline = (u: any) => {
+  if (!u) return false;
+  if (u.status !== 'online') return false;
+  if (!u.lastActive) return false;
+  const lastActiveTime = new Date(u.lastActive).getTime();
+  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+  return lastActiveTime > fiveMinutesAgo;
+};
+
 interface AdminStats {
   totalUsers: number;
   totalPoints: number;
@@ -234,7 +253,7 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
   
   // Custom device search & sort states
   const [userSearchQuery, setUserSearchQuery] = useState('');
-  const [sortCriteria, setSortCriteria] = useState<'points' | 'tasbih' | 'level' | 'recent'>('points');
+  const [sortCriteria, setSortCriteria] = useState<'points' | 'tasbih' | 'level' | 'recent' | 'leaderboard'>('leaderboard');
   const [selectedUser, setSelectedUser] = useState<any | null>(null);
   
   // Hadith Form State
@@ -1138,28 +1157,49 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
           )}
 
           {activeTab === 'users' && (() => {
-            const filteredAndSortedUsers = (stats?.usersList || [])
+            const getUserDhikrs = (u: any) => {
+              if (!u) return 0;
+              return u.totalDhikrs !== undefined ? u.totalDhikrs : ((u.totalTasbihCount || 0) + (u.totalZikrsCompleted || 0));
+            };
+
+            const getUserLevel = (u: any) => {
+              if (!u) return 1;
+              return u.currentLevel !== undefined ? u.currentLevel : Math.min(100, Math.max(1, Math.floor(Math.sqrt(getUserDhikrs(u) * 1.5)) + 1));
+            };
+
+            const isUserOnline = (u: any) => {
+              if (!u) return false;
+              if (u.status !== 'online') return false;
+              if (!u.lastActive) return false;
+              const lastActiveTime = new Date(u.lastActive).getTime();
+              const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
+              return lastActiveTime > fiveMinutesAgo;
+            };
+
+            const sortedUsers = [...(stats?.usersList || [])]
               .filter(u => !userSearchQuery.trim() || u.id?.toLowerCase().includes(userSearchQuery.toLowerCase()))
               .sort((a, b) => {
+                if (sortCriteria === 'leaderboard') {
+                  const bLevel = getUserLevel(b);
+                  const aLevel = getUserLevel(a);
+                  if (bLevel !== aLevel) return bLevel - aLevel;
+                  return getUserDhikrs(b) - getUserDhikrs(a);
+                }
                 if (sortCriteria === 'points') return (b.points || 0) - (a.points || 0);
                 if (sortCriteria === 'tasbih') return (b.totalTasbihCount || 0) - (a.totalTasbihCount || 0);
                 if (sortCriteria === 'level') {
-                  const getA = (a.points || 0) + (a.totalTasbihCount || 0)*2 + (a.totalZikrsCompleted || 0)*10;
-                  const getB = (b.points || 0) + (b.totalTasbihCount || 0)*2 + (b.totalZikrsCompleted || 0)*10;
-                  return getB - getA;
+                  const bLevel = getUserLevel(b);
+                  const aLevel = getUserLevel(a);
+                  return bLevel - aLevel;
                 }
                 const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
                 const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
                 return dateB - dateA;
               });
 
-            const getDeviceLevel100 = (u: any) => {
-              const points = u.points || 0;
-              const tasbihs = u.totalTasbihCount || 0;
-              const zikrs = u.totalZikrsCompleted || 0;
-              const score = points + (tasbihs * 2) + (zikrs * 10);
-              return Math.min(100, Math.max(1, Math.floor(Math.sqrt(score / 5)) + 1));
-            };
+            const displayedUsers = sortCriteria === 'leaderboard' 
+              ? sortedUsers.slice(0, 100) 
+              : sortedUsers;
 
             return (
               <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
@@ -1187,6 +1227,7 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
                           onChange={(e) => setSortCriteria(e.target.value as any)}
                           className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 focus:ring-1 focus:ring-brand-emerald outline-none cursor-pointer"
                         >
+                          <option value="leaderboard">🏆 {language === 'ku' ? 'پێشەنگەکانی یەکەم ١٠٠' : 'Top 100 Leaderboard'}</option>
                           <option value="points">{language === 'ku' ? 'خاڵەکان' : 'Points'}</option>
                           <option value="tasbih">{language === 'ku' ? 'تەسبیحات' : 'Tasbih Clicks'}</option>
                           <option value="level">{language === 'ku' ? 'ئاستی مۆبایل (١-١٠٠)' : 'Level 1-100'}</option>
@@ -1213,14 +1254,18 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
                         <tr className="bg-slate-900/80">
                           <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{language === 'ku' ? 'مۆبایل / ناسنامە' : 'Device Identity'}</th>
                           <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">{language === 'ku' ? 'ئاست (١-١٠٠)' : 'Level 1-100'}</th>
-                          <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">{language === 'ku' ? 'خاڵەکان / پاداشت' : 'Engagement'}</th>
+                          <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">{language === 'ku' ? 'کۆی زیکرەکان' : 'Total Dhikrs'}</th>
                           <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">{language === 'ku' ? 'نوێکردنەوە' : 'Last Sync'}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
-                        {filteredAndSortedUsers.map((u) => {
-                          const level100 = getDeviceLevel100(u);
+                        {displayedUsers.map((u) => {
+                          const level100 = getUserLevel(u);
+                          const totalDhikrs = getUserDhikrs(u);
+                          const online = isUserOnline(u);
                           const isSelected = selectedUser?.id === u.id;
+                          const rankIndex = sortedUsers.findIndex(usr => usr.id === u.id) + 1;
+
                           return (
                             <tr 
                               key={u.id} 
@@ -1229,12 +1274,34 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
                             >
                               <td className="p-6">
                                 <div className="flex items-center gap-4">
-                                  <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black uppercase text-brand-emerald group-hover:bg-brand-emerald group-hover:text-white transition-colors shrink-0">
-                                    <Smartphone size={16} />
-                                  </div>
+                                  {sortCriteria === 'leaderboard' ? (
+                                    <div className="w-10 h-10 rounded-xl flex items-center justify-center font-black text-sm shrink-0 bg-slate-850/70 text-brand-emerald">
+                                      {rankIndex === 1 ? '🥇' : rankIndex === 2 ? '🥈' : rankIndex === 3 ? '🥉' : `#${rankIndex}`}
+                                    </div>
+                                  ) : (
+                                    <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black uppercase text-brand-emerald group-hover:bg-brand-emerald group-hover:text-white transition-colors shrink-0">
+                                      <Smartphone size={16} />
+                                    </div>
+                                  )}
                                   <div className="truncate max-w-[150px] sm:max-w-xs text-left">
-                                    <span className="font-bold text-slate-300 group-hover:text-white transition-colors block text-sm truncate">{u.id}</span>
-                                    <span className="text-[9px] text-slate-500 font-bold block mt-0.5">Device Registry Node</span>
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-bold text-slate-300 group-hover:text-white transition-colors block text-sm truncate" title={u.id}>
+                                        {u.id && u.id.length > 12 ? `Device_${u.id.substring(4, 12)}` : (u.id || 'Unknown')}
+                                      </span>
+                                      {online ? (
+                                        <span className="flex h-2 w-2 relative shrink-0">
+                                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                                          <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                                        </span>
+                                      ) : (
+                                        <span className="h-2 w-2 rounded-full bg-slate-600 block shrink-0"></span>
+                                      )}
+                                    </div>
+                                    <span className="text-[9px] text-slate-500 font-bold block mt-0.5">
+                                      {online 
+                                        ? (language === 'ku' ? 'چالاک / ئۆنلاین' : 'Active Online') 
+                                        : (language === 'ku' ? 'ئۆفلاین' : 'Offline')}
+                                    </span>
                                   </div>
                                 </div>
                               </td>
@@ -1244,18 +1311,18 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
                                 </span>
                               </td>
                               <td className="p-6 text-center">
-                                <div className="font-black text-brand-gold text-xs leading-none">{u.points || 0} pts</div>
+                                <div className="font-black text-brand-gold text-sm leading-none">{totalDhikrs}</div>
                                 <div className="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">
-                                  {u.totalTasbihCount || 0} Clicked
+                                  {u.totalTasbihCount || 0} clicks
                                 </div>
                               </td>
                               <td className="p-6 text-[10px] font-black text-slate-600 uppercase text-right">
-                                {u.updatedAt ? new Date(u.updatedAt).toLocaleDateString() : 'Offline Sync'}
+                                {u.lastActive ? new Date(u.lastActive).toLocaleDateString() : (u.updatedAt ? new Date(u.updatedAt).toLocaleDateString() : 'Offline Sync')}
                               </td>
                             </tr>
                           );
                         })}
-                        {filteredAndSortedUsers.length === 0 && (
+                        {displayedUsers.length === 0 && (
                           <tr>
                             <td colSpan={4} className="p-12 text-center text-slate-500 font-bold italic">
                               No mobile devices registered.
@@ -1293,12 +1360,18 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
                       {/* Header */}
                       <div className="flex justify-between items-start border-b border-slate-800 pb-6">
                         <div className="space-y-1.5 text-left">
-                          <span className="px-3 py-1 bg-emerald-500/15 text-brand-emerald border border-brand-emerald/30 rounded-full text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5">
-                            <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-pulse" />
-                            {language === 'ku' ? 'چالاکی مۆبایل بەجیا' : 'ACTIVE DEVICE'}
+                          <span className={`px-3 py-1 border rounded-full text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5 ${
+                            isUserOnline(selectedUser) 
+                              ? 'bg-emerald-500/15 text-brand-emerald border-brand-emerald/30' 
+                              : 'bg-slate-800/50 text-slate-400 border-slate-750'
+                          }`}>
+                            <span className={`w-1.5 h-1.5 rounded-full ${isUserOnline(selectedUser) ? 'bg-brand-emerald animate-pulse' : 'bg-slate-500'}`} />
+                            {isUserOnline(selectedUser) 
+                              ? (language === 'ku' ? 'ئۆنلاین مەوجودە' : 'ONLINE') 
+                              : (language === 'ku' ? 'ئۆفلاینی دوور' : 'OFFLINE')}
                           </span>
                           <h4 className="font-black text-lg text-white truncate max-w-[200px]" title={selectedUser.id}>
-                            {selectedUser.id}
+                            {selectedUser.id && selectedUser.id.length > 12 ? `Device_${selectedUser.id.substring(4, 12)}` : (selectedUser.id || 'Unknown')}
                           </h4>
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                             {language === 'ku' ? 'مۆبایلی تۆمارکراو بەجیا' : 'SECURE NODE ID'}
@@ -1314,10 +1387,11 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
 
                       {/* Score metrics */}
                       {(() => {
-                        const level100 = getDeviceLevel100(selectedUser);
+                        const level100 = getUserLevel(selectedUser);
                         const points = selectedUser.points || 0;
                         const tasbihs = selectedUser.totalTasbihCount || 0;
                         const zikrs = selectedUser.totalZikrsCompleted || 0;
+                        const totalDhikrs = getUserDhikrs(selectedUser);
                         const compositeScore = points + (tasbihs * 2) + (zikrs * 10);
                         
                         const currentLevelProgressScore = compositeScore % 250;

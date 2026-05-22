@@ -22,13 +22,19 @@ service cloud.firestore {
     // Validation Blueprint for User
     function isValidUser(data) {
       return data.keys().hasAll(['points', 'level', 'dailyZikrsCompleted', 'totalTasbihCount', 'badges', 'updatedAt']) &&
-             data.keys().size() == 6 &&
              data.points is number && data.points >= 0 &&
              data.level is number && data.level >= 1 &&
              data.dailyZikrsCompleted is number && data.dailyZikrsCompleted >= 0 &&
              data.totalTasbihCount is number && data.totalTasbihCount >= 0 &&
              data.badges is list &&
-             data.updatedAt is string;
+             data.updatedAt is string &&
+             (!('deviceId' in data) || data.deviceId is string) &&
+             (!('totalDhikrs' in data) || data.totalDhikrs is number) &&
+             (!('currentLevel' in data) || data.currentLevel is number) &&
+             (!('lastActive' in data) || data.lastActive is string) &&
+             (!('status' in data) || data.status is string) &&
+             (!('history' in data) || data.history is list) &&
+             (!('totalAyahsRead' in data) || data.totalAyahsRead is number);
     }
 
     function isValidZikrStat(data) {
@@ -70,14 +76,17 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if isOwner(userId) || isAdmin();
+      allow get: if true;
       allow list: if isAdmin(); 
       
-      allow create: if isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow create: if isSignedIn() && isValidId(userId) && isValidUser(incoming());
       
-      allow update: if (isOwner(userId) || isAdmin()) && isValidId(userId) && isValidUser(incoming()) && (
+      allow update: if (isSignedIn() || isAdmin()) && isValidId(userId) && isValidUser(incoming()) && (
         // Action: Sync Stats
-        (incoming().diff(existing()).affectedKeys().hasOnly(['points', 'level', 'dailyZikrsCompleted', 'totalTasbihCount', 'badges', 'updatedAt']))
+        (incoming().diff(existing()).affectedKeys().hasOnly([
+          'points', 'level', 'dailyZikrsCompleted', 'totalTasbihCount', 'badges', 'updatedAt',
+          'deviceId', 'totalDhikrs', 'currentLevel', 'lastActive', 'status', 'history', 'totalAyahsRead'
+        ])) || isAdmin()
       );
       
       allow delete: if isAdmin();

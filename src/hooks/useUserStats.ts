@@ -74,17 +74,29 @@ export function useUserStats() {
     return 1;
   };
 
+  // Find or generate a unique Device ID in LocalStorage
+  const [deviceId] = useState<string>(() => {
+    let id = localStorage.getItem('device_id');
+    if (!id) {
+      id = 'dev_' + Math.random().toString(36).substring(2, 9) + '_' + Date.now().toString(36);
+      localStorage.setItem('device_id', id);
+    }
+    return id;
+  });
+
   const [userId, setUserId] = useState<string | null>(null);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
-        syncWithFirestore(user.uid);
+        syncWithFirestore();
       } else {
         setUserId(null);
-        // Automatically sign in anonymously so every device gets a unique ID
-        signInAnonymously(auth).catch((err) => {
+        // Automatically sign in anonymously so every device gets a unique ID and can talk to Firestore securely
+        signInAnonymously(auth).then((cred) => {
+          if (cred.user) setUserId(cred.user.uid);
+        }).catch((err) => {
           console.warn("Silent anonymous authentication failed (may be disabled in console):", err);
         });
       }
@@ -92,13 +104,25 @@ export function useUserStats() {
     return () => unsubscribe();
   }, []);
 
-  const syncWithFirestore = async (uid: string) => {
-    if (!uid) return;
-    const path = `users/${uid}`;
+  const syncWithFirestore = async () => {
+    if (!deviceId) return;
     try {
-      const userDoc = await getDoc(doc(db, 'users', uid));
+      const userDoc = await getDoc(doc(db, 'users', deviceId));
+      const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
+      const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
+
+      const defaultPayload = {
+        ...stats,
+        deviceId: deviceId,
+        totalDhikrs: totalDhikrs,
+        currentLevel: currentLevel,
+        lastActive: new Date().toISOString(),
+        status: 'online',
+        updatedAt: new Date().toISOString()
+      };
+
       if (userDoc.exists()) {
-        const firestoreData = userDoc.data() as UserStats;
+        const firestoreData = userDoc.data() as any;
         if (firestoreData.points > stats.points) {
           setStats(prev => ({
             ...prev,
@@ -106,10 +130,7 @@ export function useUserStats() {
             history: firestoreData.history || prev.history || []
           }));
         } else {
-          await setDoc(doc(db, 'users', uid), {
-            ...stats,
-            updatedAt: new Date().toISOString()
-          }, { merge: true });
+          await setDoc(doc(db, 'users', deviceId), defaultPayload, { merge: true });
         }
       } else {
         // Increment global device counts
@@ -118,10 +139,7 @@ export function useUserStats() {
           deviceCount: increment(1)
         }, { merge: true }).catch((e) => console.warn("Failed to increment deviceCount:", e));
 
-        await setDoc(doc(db, 'users', uid), {
-          ...stats,
-          updatedAt: new Date().toISOString()
-        });
+        await setDoc(doc(db, 'users', deviceId), defaultPayload);
       }
     } catch (err) {
       console.warn("Firestore syncing failed (offline or unauthenticated):", err);
@@ -130,12 +148,19 @@ export function useUserStats() {
 
   useEffect(() => {
     localStorage.setItem('user_stats', JSON.stringify(stats));
-    if (userId) {
-      const path = `users/${userId}`;
+    if (deviceId) {
       const updateRef = async () => {
         try {
-          await setDoc(doc(db, 'users', userId), {
+          const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
+          const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
+
+          await setDoc(doc(db, 'users', deviceId), {
             ...stats,
+            deviceId: deviceId,
+            totalDhikrs: totalDhikrs,
+            currentLevel: currentLevel,
+            lastActive: new Date().toISOString(),
+            status: 'online',
             updatedAt: new Date().toISOString()
           }, { merge: true });
         } catch (err) {
@@ -144,7 +169,57 @@ export function useUserStats() {
       };
       updateRef();
     }
-  }, [stats, userId]);
+  }, [stats, deviceId]);
+
+  // Presence logic: mark online on mount, and offline on unmount or invisibility
+  useEffect(() => {
+    if (!deviceId) return;
+
+    const markOnline = async () => {
+      try {
+        await setDoc(doc(db, 'users', deviceId), {
+          status: 'online',
+          lastActive: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Presence: failed to mark online:", err);
+      }
+    };
+
+    const markOffline = async () => {
+      try {
+        await setDoc(doc(db, 'users', deviceId), {
+          status: 'offline',
+          lastActive: new Date().toISOString()
+        }, { merge: true });
+      } catch (err) {
+        console.warn("Presence: failed to mark offline:", err);
+      }
+    };
+
+    markOnline();
+
+    const handleBeforeUnload = () => {
+      markOffline();
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        markOffline();
+      } else {
+        markOnline();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    window.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+      window.removeEventListener('visibilitychange', handleVisibilityChange);
+      markOffline();
+    };
+  }, [deviceId]);
 
   const updateHistory = (type: 'zikr' | 'ayah', amountPoints: number) => {
     const today = new Date().toISOString().split('T')[0];
@@ -329,6 +404,8 @@ export function useUserStats() {
     currentLevelInfo,
     nextLevelInfo,
     sendFeedback,
-    LEVELS
+    LEVELS,
+    deviceId,
+    userId
   };
 }
