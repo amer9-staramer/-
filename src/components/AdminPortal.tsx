@@ -105,7 +105,7 @@ interface AdminStats {
   messages: any[];
 }
 
-export function AdminPortal({ onBack, language }: { onBack: () => void, language: 'ku' | 'en' | 'ar' }) {
+export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () => void, language: 'ku' | 'en' | 'ar', isDeviceAdmin?: boolean }) {
   const t = {
     ku: {
       dashboard: 'داشبۆردی بەڕێوەبردن',
@@ -249,7 +249,7 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
   const [error, setError] = useState('');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isStatsLoading, setIsStatsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'messages' | 'zikrs' | 'settings' | 'hadiths'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'messages' | 'zikrs' | 'settings' | 'hadiths'>('users');
   
   // Custom device search & sort states
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -276,13 +276,17 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
       setUser(user);
       if (user) {
         checkAdmin(user.uid);
+      } else if (isDeviceAdmin) {
+        setIsAdmin(true);
+        fetchData();
+        setLoading(false);
       } else {
         setIsAdmin(false);
         setLoading(false);
       }
     });
     return () => unsubscribe();
-  }, []);
+  }, [isDeviceAdmin]);
 
   // Real-time updates for Users (statistics, active devices, total tasbihs)
   useEffect(() => {
@@ -344,6 +348,12 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
 
   const checkAdmin = async (uid: string) => {
     try {
+      if (isDeviceAdmin) {
+        setIsAdmin(true);
+        fetchData();
+        setLoading(false);
+        return;
+      }
       if (auth.currentUser?.email === 'adolamer9@gmail.com') {
         setIsAdmin(true);
         fetchData();
@@ -359,7 +369,12 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
         setError('Unauthorized Access Detected.');
       }
     } catch (err) {
-      setError('System verification failed.');
+      if (isDeviceAdmin) {
+        setIsAdmin(true);
+        fetchData();
+      } else {
+        setError('System verification failed.');
+      }
     } finally {
       setLoading(false);
     }
@@ -1297,10 +1312,8 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
                                         <span className="h-2 w-2 rounded-full bg-slate-600 block shrink-0"></span>
                                       )}
                                     </div>
-                                    <span className="text-[9px] text-slate-500 font-bold block mt-0.5">
-                                      {online 
-                                        ? (language === 'ku' ? 'چالاک / ئۆنلاین' : 'Active Online') 
-                                        : (language === 'ku' ? 'ئۆفلاین' : 'Offline')}
+                                    <span className={`text-[10px] font-bold block mt-0.5 ${online ? 'text-emerald-400' : 'text-slate-500'}`}>
+                                      {online ? 'ئۆنڵاین (Online)' : 'ئۆفڵاین (Offline)'}
                                     </span>
                                   </div>
                                 </div>

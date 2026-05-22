@@ -926,6 +926,7 @@ export default function App() {
     return (
       <AdminPortal 
         language={language}
+        isDeviceAdmin={isDeviceAdmin}
         onBack={() => {
           setIsAdmin(false);
           signOut(auth);
