@@ -83,7 +83,7 @@ service cloud.firestore {
       
       allow update: if (isSignedIn() || isAdmin()) && isValidId(userId) && isValidUser(incoming());
       
-      allow delete: if isSignedIn();
+      allow delete: if false;
     }
 
     match /zikr_stats/{zikrId} {
