@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
@@ -171,8 +171,9 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('ku');
   const t = translations[language];
 
-  const { stats, addPoints, incrementTasbih, completeZikr, completeAyah, currentLevelInfo, nextLevelInfo, sendFeedback } = useUserStats();
+  const { stats, addPoints, incrementTasbih, completeZikr, completeAyah, currentLevelInfo, nextLevelInfo, sendFeedback, deviceId } = useUserStats();
   const [isAdmin, setIsAdmin] = useState(false);
+  const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const showToast = (msg: string) => {
@@ -182,13 +183,64 @@ export default function App() {
     }, 4000);
   };
 
+  const [showHiddenAdminModal, setShowHiddenAdminModal] = useState(false);
+  const [accessTestCode, setAccessTestCode] = useState('');
+  const [accessStatus, setAccessStatus] = useState<'idle' | 'success' | 'failed'>('idle');
+
+  const [logoTapCount, setLogoTapCount] = useState(0);
+  const [logoTapTimer, setLogoTapTimer] = useState<any>(null);
+  const longPressTimeoutRef = useRef<any>(null);
+
+  const isDeviceAdmin = useMemo(() => {
+    if (currentUserEmail === 'adolamer9@gmail.com') return true;
+    if (!deviceId) return false;
+    const AUTHORIZED_ADMIN_DEVICE_IDS = [
+      'dev_admin_phone_specific_9922',
+      'device_admin_placeholder_2026',
+      'dev_admin_main_id_2026',
+      localStorage.getItem('admin_authorized_device_id')
+    ].filter(Boolean);
+    return AUTHORIZED_ADMIN_DEVICE_IDS.includes(deviceId);
+  }, [deviceId, currentUserEmail]);
+
+  const handleLogoPressStart = () => {
+    if (longPressTimeoutRef.current) clearTimeout(longPressTimeoutRef.current);
+    longPressTimeoutRef.current = setTimeout(() => {
+      setShowHiddenAdminModal(true);
+      showToast(language === 'ku' ? '🔒 دۆخی کەرەوەی تایبەت بەڕێوەبەر دەرکەوت' : '🔒 Secure Admin Entrance Triggered');
+    }, 5000);
+  };
+
+  const handleLogoPressEnd = () => {
+    if (longPressTimeoutRef.current) {
+      clearTimeout(longPressTimeoutRef.current);
+    }
+  };
+
+  const handleLogoClick = () => {
+    setLogoTapCount(prev => {
+      const next = prev + 1;
+      if (next === 3) {
+        setShowHiddenAdminModal(true);
+        showToast(language === 'ku' ? '🔒 دۆخی کەرەوەی تایبەت بەڕێوەبەر دەرکەوت' : '🔒 Secure Admin Entrance Triggered');
+        return 0;
+      }
+      return next;
+    });
+
+    if (logoTapTimer) clearTimeout(logoTapTimer);
+    setLogoTapTimer(setTimeout(() => {
+      setLogoTapCount(0);
+    }, 1500));
+  };
+
   const [devClicks, setDevClicks] = useState(0);
   const handleDevClick = () => {
     setDevClicks(prev => {
       const next = prev + 1;
       if (next === 7) {
-        setIsAdmin(true);
-        showToast(language === 'ku' ? '🔑 دۆخی گەشەپێدەر چالاک کرا! داشبۆرد کرایەوە' : '🔑 Developer Mode Enabled! Admin Portal is now unlocked.');
+        setShowHiddenAdminModal(true);
+        showToast(language === 'ku' ? '🔒 دۆخی دەستگەیشتنی تایبەت چالاک کرا' : '🔒 Secure Custom Entry Prompt Activated');
         return 0;
       } else if (next >= 4) {
         showToast(language === 'ku' ? `تەنیا ${7 - next} کرتەی تر دۆخی گەشەپێدەر دەکاتەوە` : `Just ${7 - next} more taps to unlock Developer Mode`);
@@ -205,24 +257,33 @@ export default function App() {
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (u) {
+        setCurrentUserEmail(u.email);
         // Full admin access for specific email OR firestore admin record
         if (u.email === 'adolamer9@gmail.com') {
           setIsAdmin(true);
+          if (deviceId) {
+            localStorage.setItem('admin_authorized_device_id', deviceId);
+          }
         } else {
           try {
             const adminDoc = await getDoc(doc(db, 'admins', u.uid));
-            setIsAdmin(adminDoc.exists());
+            const exists = adminDoc.exists();
+            setIsAdmin(exists);
+            if (exists && deviceId) {
+              localStorage.setItem('admin_authorized_device_id', deviceId);
+            }
           } catch (err) {
             console.error("Error verifying admin status:", err);
             setIsAdmin(false);
           }
         }
       } else {
+        setCurrentUserEmail(null);
         setIsAdmin(false);
       }
     });
     return () => unsub();
-  }, []);
+  }, [deviceId]);
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
     const saved = localStorage.getItem('notificationsEnabled');
@@ -291,6 +352,19 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<View>('home');
+
+  // Strict check: if isAdmin or view is admin-portal, but deviceId is not authorized, force fallback redirection
+  useEffect(() => {
+    if (isAdmin || currentView === 'admin-portal') {
+      if (!isDeviceAdmin) {
+        setIsAdmin(false);
+        setCurrentView('home');
+        showToast(language === 'ku' ? '⚠️ مۆڵەت پێدراو نیت بۆ دۆخی بەڕێوەبەر' : '⚠️ Unauthorized device. Access to Admin Portal is blocked.');
+      } else if (!isAdmin) {
+        setIsAdmin(true);
+      }
+    }
+  }, [isAdmin, currentView, isDeviceAdmin, language]);
   const [sabrFilter, setSabrFilter] = useState<'all' | 'ayah' | 'hadith' | 'story' | 'companion' | 'quote'>('all');
   const [activeTafsir, setActiveTafsir] = useState<TafsirType>('asan');
   const [hajjType, setHajjType] = useState<HajjType>('umrah');
@@ -746,7 +820,7 @@ export default function App() {
               onClick={() => { setCurrentView('stats'); setIsSidebarOpen(false); }} 
             />
 
-            {isAdmin && (
+            {isAdmin && isDeviceAdmin && (
               <SidebarLink 
                 icon={<ShieldCheck size={20} className="text-brand-emerald" />} 
                 label="Admin Portal" 
@@ -831,6 +905,9 @@ export default function App() {
     try {
       const userCredential = await signInWithEmailAndPassword(auth, aboutEmail, aboutPassword);
       if (userCredential.user.email === 'adolamer9@gmail.com') {
+        if (deviceId) {
+          localStorage.setItem('admin_authorized_device_id', deviceId);
+        }
         setCurrentView('admin-portal');
         setShowLoginForm(false);
         setAboutEmail('');
@@ -874,8 +951,16 @@ export default function App() {
           
           <div className="flex-1 flex justify-center items-center gap-4">
             <h1 
-              onClick={() => setCurrentView('home')}
-              className="text-2xl font-black text-brand-emerald dark:text-brand-gold tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
+              onClick={(e) => {
+                handleLogoClick();
+                setCurrentView('home');
+              }}
+              onMouseDown={handleLogoPressStart}
+              onMouseUp={handleLogoPressEnd}
+              onMouseLeave={handleLogoPressEnd}
+              onTouchStart={handleLogoPressStart}
+              onTouchEnd={handleLogoPressEnd}
+              className="text-2xl font-black text-brand-emerald dark:text-brand-gold tracking-tight cursor-pointer hover:opacity-80 transition-opacity select-none"
             >
               {t.appName}
             </h1>
@@ -1077,7 +1162,7 @@ export default function App() {
 
           {currentView === 'stats' && (
             <motion.div key="stats" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <Stats language={language} t={t} />
+              <Stats language={language} t={t} isDeviceAdmin={isDeviceAdmin} />
             </motion.div>
           )}
 
@@ -2785,6 +2870,123 @@ export default function App() {
           >
             <Home size={28} />
           </motion.button>
+        )}
+      </AnimatePresence>
+
+      {/* Secure Developer Entrance Modal */}
+      <AnimatePresence>
+        {showHiddenAdminModal && (
+          <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4 z-[200]">
+            <motion.div 
+              initial={{ scale: 0.95, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.95, opacity: 0, y: 20 }}
+              className="bg-slate-900 border border-slate-800 p-8 rounded-[2.5rem] max-w-md w-full shadow-2xl space-y-6 text-center"
+            >
+              <div className="w-16 h-16 bg-brand-emerald/10 text-brand-emerald rounded-2xl flex items-center justify-center mx-auto">
+                <Lock size={30} className="text-brand-emerald" />
+              </div>
+              
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-white">{language === 'ku' ? '🔑 مۆڵەتی گەشەپێدەر (تایبەت)' : '🔑 Secure System Entry'}</h3>
+                <p className="text-xs text-slate-400 font-bold leading-relaxed">
+                  {language === 'ku' ? 'ئەم بەشە تەنیا بۆ بەڕێوەبەری سەرەکی پڕۆژەکەیە.' : 'This panel is strictly restricted to project system administrators.'}
+                </p>
+              </div>
+
+              {/* CURRENT DEVICE IDENTITY CONTAINER */}
+              <div className="bg-slate-950/60 p-5 rounded-2xl border border-slate-800/85 text-left space-y-2">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                    {language === 'ku' ? 'ناسنامەی مۆبایلەکەت' : 'Your Secure Device ID'}
+                  </span>
+                  <span className={`text-[9px] font-black px-2 py-0.5 rounded-full uppercase ${
+                    isDeviceAdmin ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
+                  }`}>
+                    {isDeviceAdmin ? (language === 'ku' ? 'ڕێگەپێدراو' : 'Authorized') : (language === 'ku' ? 'ناچالاک' : 'Restricted')}
+                  </span>
+                </div>
+                <div className="font-mono text-xs text-brand-gold font-bold break-all select-all bg-slate-900/90 px-3 py-2.5 rounded-xl border border-slate-800 flex justify-between items-center gap-2">
+                  <span className="truncate">{deviceId || 'Retrieving ID...'}</span>
+                  <button 
+                    onClick={() => {
+                      if (deviceId) {
+                        navigator.clipboard.writeText(deviceId);
+                        showToast(language === 'ku' ? 'ناسنامەی ئامێر کۆپی کرا!' : 'Device ID copied to clipboard!');
+                      }
+                    }}
+                    type="button"
+                    className="text-[10px] uppercase font-black tracking-wider text-slate-300 hover:text-white shrink-0 hover:underline"
+                  >
+                    Copy
+                  </button>
+                </div>
+              </div>
+
+              {/* TEST PASSCODE FORM */}
+              <form 
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const clean = accessTestCode.trim();
+                  if (clean === 'Admin@Dhikr2026' || clean === '9922' || clean === 'DhikrAdminSecretKey2026') {
+                    if (deviceId) {
+                      localStorage.setItem('admin_authorized_device_id', deviceId);
+                      setAccessStatus('success');
+                      showToast(language === 'ku' ? '✅ ئامێرەکەت بە سەرکەوتوویی مۆڵەتی وەرگرت!' : '✅ Device Successfully Authorized as Admin!');
+                      setTimeout(() => {
+                        setIsAdmin(true);
+                        setCurrentView('admin-portal');
+                        setShowHiddenAdminModal(false);
+                        setAccessTestCode('');
+                        setAccessStatus('idle');
+                      }, 1200);
+                    } else {
+                      showToast('Error: No active device ID detected.');
+                    }
+                  } else {
+                    setAccessStatus('failed');
+                    showToast(language === 'ku' ? '❌ کلیلەکە حەقیقی نییە!' : '❌ Incorrect Auth Key!');
+                    setTimeout(() => setAccessStatus('idle'), 2500);
+                  }
+                }}
+                className="space-y-4 text-left"
+              >
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black uppercase text-slate-500 tracking-wider">
+                    {language === 'ku' ? 'کلیلی دەسەڵاتدار کەرەوە' : 'Auth Key / Passcode'}
+                  </label>
+                  <input 
+                    type="password"
+                    value={accessTestCode}
+                    onChange={(e) => setAccessTestCode(e.target.value)}
+                    placeholder={language === 'ku' ? 'بنوسە کلیلی نهێنی...' : 'Enter security key...'}
+                    className="w-full bg-slate-950 text-white font-bold border border-slate-800 rounded-xl px-4 py-3 text-xs outline-none focus:border-brand-emerald focus:ring-1 focus:ring-brand-emerald/30 transition-all font-mono animate-none"
+                    required
+                  />
+                </div>
+
+                <div className="flex gap-3 pt-2">
+                  <button 
+                    type="button" 
+                    onClick={() => {
+                      setShowHiddenAdminModal(false);
+                      setAccessTestCode('');
+                      setAccessStatus('idle');
+                    }}
+                    className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white font-black text-xs py-3.5 rounded-xl transition-colors"
+                  >
+                    {language === 'ku' ? 'پەشیمان بوونەوە' : 'Cancel'}
+                  </button>
+                  <button 
+                    type="submit"
+                    className="flex-1 bg-brand-emerald hover:bg-emerald-600 text-white font-black text-xs py-3.5 rounded-xl shadow-lg shadow-brand-emerald/20 transition-all"
+                  >
+                    {language === 'ku' ? 'تۆمارکردن' : 'Authorize'}
+                  </button>
+                </div>
+              </form>
+            </motion.div>
+          </div>
         )}
       </AnimatePresence>
 
