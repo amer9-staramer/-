@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, addDoc, collection, serverTimestamp, increment } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
@@ -112,6 +112,12 @@ export function useUserStats() {
           }, { merge: true });
         }
       } else {
+        // Increment global device counts
+        const globalRef = doc(db, 'global_stats', 'main');
+        await setDoc(globalRef, {
+          deviceCount: increment(1)
+        }, { merge: true }).catch((e) => console.warn("Failed to increment deviceCount:", e));
+
         await setDoc(doc(db, 'users', uid), {
           ...stats,
           updatedAt: new Date().toISOString()
@@ -192,7 +198,7 @@ export function useUserStats() {
     });
   };
 
-  const incrementTasbih = (count: number = 1, zikrTitle: string = '') => {
+  const incrementTasbih = (count: number = 1, zikrTitle: string = '', zikrId?: string) => {
     setStats(prev => ({ ...prev, totalTasbihCount: prev.totalTasbihCount + count }));
     
     // Base points for tasbih is usually 1 point per click
@@ -208,9 +214,31 @@ export function useUserStats() {
     finalPoints = count * holyMultiplier * salawatMultiplier;
     
     addPoints(finalPoints); 
+
+    // Update global aggregates & specific zikr stats
+    try {
+      const globalRef = doc(db, 'global_stats', 'main');
+      setDoc(globalRef, {
+        totalTasbihCount: increment(count),
+        totalPoints: increment(finalPoints)
+      }, { merge: true });
+
+      if (zikrId) {
+        const statsRef = doc(db, 'zikr_stats', zikrId);
+        setDoc(statsRef, {
+          id: zikrId,
+          title: zikrTitle.substring(0, 50) + '...',
+          totalClicks: increment(count),
+          viewCount: increment(0),
+          lastViewed: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Error archiving global tasbih statistic:", e);
+    }
   };
 
-  const completeZikr = (zikrTitle: string = '', basePoints: number = 5, category: string = 'general') => {
+  const completeZikr = (zikrTitle: string = '', basePoints: number = 5, category: string = 'general', zikrId?: string) => {
     let finalPoints = basePoints;
     
     // Holy Time Multiplier (Holy Thursday night or Friday day)
@@ -226,6 +254,28 @@ export function useUserStats() {
     finalPoints = basePoints * holyMultiplier * timingMultiplier * salawatMultiplier;
     
     updateHistory('zikr', finalPoints); 
+
+    // Update global aggregates & specific zikr stats
+    try {
+      const globalRef = doc(db, 'global_stats', 'main');
+      setDoc(globalRef, {
+        totalZikrsCount: increment(1),
+        totalPoints: increment(finalPoints)
+      }, { merge: true });
+
+      if (zikrId) {
+        const statsRef = doc(db, 'zikr_stats', zikrId);
+        setDoc(statsRef, {
+          id: zikrId,
+          title: zikrTitle.substring(0, 50) + '...',
+          completionCount: increment(1),
+          viewCount: increment(0),
+          lastViewed: new Date().toISOString()
+        }, { merge: true });
+      }
+    } catch (e) {
+      console.warn("Error archiving global zikr completion:", e);
+    }
   };
 
   const completeAyah = (isKahf: boolean = false) => {
@@ -233,11 +283,21 @@ export function useUserStats() {
     
     // Friday Boost: Al-Kahf
     const holyMultiplier = isHolyTime() ? 2 : 1;
-    const kahfMultiplier = (isHolyTime() && isKahf) ? 2 : 1;
+    const khfMultiplier = (isHolyTime() && isKahf) ? 2 : 1;
 
-    finalPoints = finalPoints * holyMultiplier * kahfMultiplier;
+    finalPoints = finalPoints * holyMultiplier * khfMultiplier;
     
     updateHistory('ayah', finalPoints); 
+
+    // Update global aggregates
+    try {
+      const globalRef = doc(db, 'global_stats', 'main');
+      setDoc(globalRef, {
+        totalPoints: increment(finalPoints)
+      }, { merge: true });
+    } catch (e) {
+      console.warn("Error archiving global ayah points:", e);
+    }
   };
 
   const sendFeedback = async (name: string, message: string) => {

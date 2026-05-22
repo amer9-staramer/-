@@ -19,7 +19,11 @@ import {
   RefreshCw,
   Search,
   Code2,
-  MessageSquare
+  MessageSquare,
+  Smartphone,
+  Calendar,
+  Trophy,
+  BookOpen
 } from 'lucide-react';
 import { 
   signInWithEmailAndPassword, 
@@ -226,7 +230,12 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
   const [error, setError] = useState('');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isStatsLoading, setIsStatsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'zikrs' | 'settings' | 'hadiths'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'messages' | 'zikrs' | 'settings' | 'hadiths'>('overview');
+  
+  // Custom device search & sort states
+  const [userSearchQuery, setUserSearchQuery] = useState('');
+  const [sortCriteria, setSortCriteria] = useState<'points' | 'tasbih' | 'level' | 'recent'>('points');
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   
   // Hadith Form State
   const [showHadithForm, setShowHadithForm] = useState(false);
@@ -663,7 +672,8 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
         <nav className="flex-1 w-full px-2 space-y-4">
           <NavButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 size={22} />} label={t.overview} />
           <NavButton active={activeTab === 'hadiths'} onClick={() => setActiveTab('hadiths')} icon={<Zap size={22} />} label={t.hadiths} />
-          <NavButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Users size={22} />} label={language === 'ku' ? 'نامەکان' : 'Messages'} />
+          <NavButton active={activeTab === 'users'} onClick={() => { setActiveTab('users'); setSelectedUser(null); }} icon={<Smartphone size={22} />} label={language === 'ku' ? 'مۆبایلەکان' : language === 'ar' ? 'الأجهزة النشطة' : 'Mobile Devices'} />
+          <NavButton active={activeTab === 'messages'} onClick={() => setActiveTab('messages')} icon={<MessageSquare size={22} />} label={language === 'ku' ? 'نامەکان' : language === 'ar' ? 'الرسائل والملاحظات' : 'Messages'} />
           <NavButton active={activeTab === 'zikrs'} onClick={() => setActiveTab('zikrs')} icon={<TrendingUp size={22} />} label={t.analytics} />
           <NavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={22} />} label={t.settings} />
         </nav>
@@ -876,7 +886,7 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
             </motion.div>
           )}
 
-          {activeTab === 'users' && (
+          {activeTab === 'messages' && (
              <motion.div 
                key="messages"
                initial={{ opacity: 0, x: 20 }}
@@ -1127,65 +1137,319 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
             </motion.div>
           )}
 
-          {activeTab === 'users' && (
-            <motion.div 
-              key="users"
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: -20 }}
-              className="bg-slate-900/50 backdrop-blur-md rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden"
-            >
-              <div className="p-10 border-b border-slate-800 flex flex-col md:flex-row items-center justify-between gap-6">
-                <div className="space-y-1 text-center md:text-right">
-                  <h3 className="text-2xl font-black text-white">Identity Database</h3>
-                  <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">Global User Registries</p>
-                </div>
-                <div className="relative w-full md:w-auto">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
-                  <input 
-                    type="text" 
-                    placeholder="Search by Identity..."
-                    className="w-full md:w-72 pl-12 pr-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-sm font-bold text-white focus:ring-2 focus:ring-brand-emerald transition-all placeholder:text-slate-600"
-                  />
-                </div>
-              </div>
-              <div className="overflow-x-auto">
-                <table className="w-full text-left border-collapse min-w-[800px]">
-                  <thead>
-                    <tr className="bg-slate-900/80">
-                      <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{t.id}</th>
-                      <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{t.level}</th>
-                      <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Wealth</th>
-                      <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Cycle Status</th>
-                      <th className="p-8 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{t.lastSync}</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-800">
-                    {stats?.usersList?.map((u) => (
-                      <tr key={u.id} className="hover:bg-slate-800/40 transition-colors group">
-                        <td className="p-8">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black uppercase text-brand-emerald group-hover:bg-brand-emerald group-hover:text-white transition-colors">
-                              {u.id.substring(0, 2)}
+          {activeTab === 'users' && (() => {
+            const filteredAndSortedUsers = (stats?.usersList || [])
+              .filter(u => !userSearchQuery.trim() || u.id?.toLowerCase().includes(userSearchQuery.toLowerCase()))
+              .sort((a, b) => {
+                if (sortCriteria === 'points') return (b.points || 0) - (a.points || 0);
+                if (sortCriteria === 'tasbih') return (b.totalTasbihCount || 0) - (a.totalTasbihCount || 0);
+                if (sortCriteria === 'level') {
+                  const getA = (a.points || 0) + (a.totalTasbihCount || 0)*2 + (a.totalZikrsCompleted || 0)*10;
+                  const getB = (b.points || 0) + (b.totalTasbihCount || 0)*2 + (b.totalZikrsCompleted || 0)*10;
+                  return getB - getA;
+                }
+                const dateA = a.updatedAt ? new Date(a.updatedAt).getTime() : 0;
+                const dateB = b.updatedAt ? new Date(b.updatedAt).getTime() : 0;
+                return dateB - dateA;
+              });
+
+            const getDeviceLevel100 = (u: any) => {
+              const points = u.points || 0;
+              const tasbihs = u.totalTasbihCount || 0;
+              const zikrs = u.totalZikrsCompleted || 0;
+              const score = points + (tasbihs * 2) + (zikrs * 10);
+              return Math.min(100, Math.max(1, Math.floor(Math.sqrt(score / 5)) + 1));
+            };
+
+            return (
+              <div className="grid grid-cols-1 xl:grid-cols-12 gap-8 items-start">
+                {/* DEVICE LIST COLUMN */}
+                <motion.div 
+                  key="users-list-pane"
+                  initial={{ opacity: 0, y: 15 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="xl:col-span-7 bg-slate-900/50 backdrop-blur-md rounded-[2.5rem] border border-slate-800 shadow-2xl overflow-hidden"
+                >
+                  <div className="p-8 border-b border-slate-800 space-y-6">
+                    <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                      <div className="space-y-1">
+                        <h3 className="text-2xl font-black text-white">
+                          {language === 'ku' ? 'ئامارەکانی مۆبایل بەجیا' : language === 'ar' ? 'أجهزة الهواتف المنفردة' : 'Device Explorer'}
+                        </h3>
+                        <p className="text-xs font-bold text-slate-500 uppercase tracking-widest">
+                          {language === 'ku' ? 'تۆماری هەر مۆبایلێک و چالاکیەکانی بەجیا' : language === 'ar' ? 'تفاصيل كل مۆبايل ومستويات وتفاعل الذكر' : 'Individual phone level tracking & specific zikrs'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-slate-500">{language === 'ku' ? 'ڕێکخستن:' : 'Sort:'}</span>
+                        <select 
+                          value={sortCriteria} 
+                          onChange={(e) => setSortCriteria(e.target.value as any)}
+                          className="px-4 py-2 bg-slate-950 border border-slate-800 rounded-xl text-xs font-bold text-slate-300 focus:ring-1 focus:ring-brand-emerald outline-none cursor-pointer"
+                        >
+                          <option value="points">{language === 'ku' ? 'خاڵەکان' : 'Points'}</option>
+                          <option value="tasbih">{language === 'ku' ? 'تەسبیحات' : 'Tasbih Clicks'}</option>
+                          <option value="level">{language === 'ku' ? 'ئاستی مۆبایل (١-١٠٠)' : 'Level 1-100'}</option>
+                          <option value="recent">{language === 'ku' ? 'کۆتا چالاکی' : 'Recent'}</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="relative w-full">
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-500" size={18} />
+                      <input 
+                        type="text" 
+                        value={userSearchQuery}
+                        onChange={(e) => setUserSearchQuery(e.target.value)}
+                        placeholder={language === 'ku' ? 'بگەڕێ بۆ ناسنامەی ئامێر یان مۆبایل...' : language === 'ar' ? 'البحث عن معرف هاتف...' : 'Search by Device ID...'}
+                        className="w-full pl-12 pr-6 py-4 bg-slate-950 border border-slate-800 rounded-2xl text-sm font-bold text-white focus:ring-2 focus:ring-brand-emerald transition-all placeholder:text-slate-600"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse min-w-[500px]">
+                      <thead>
+                        <tr className="bg-slate-900/80">
+                          <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">{language === 'ku' ? 'مۆبایل / ناسنامە' : 'Device Identity'}</th>
+                          <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">{language === 'ku' ? 'ئاست (١-١٠٠)' : 'Level 1-100'}</th>
+                          <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-center">{language === 'ku' ? 'خاڵەکان / پاداشت' : 'Engagement'}</th>
+                          <th className="p-6 text-[10px] font-black uppercase tracking-[0.2em] text-slate-500 text-right">{language === 'ku' ? 'نوێکردنەوە' : 'Last Sync'}</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-800">
+                        {filteredAndSortedUsers.map((u) => {
+                          const level100 = getDeviceLevel100(u);
+                          const isSelected = selectedUser?.id === u.id;
+                          return (
+                            <tr 
+                              key={u.id} 
+                              onClick={() => setSelectedUser(u)}
+                              className={`cursor-pointer transition-colors group ${isSelected ? 'bg-slate-800/80 border-r-4 border-brand-emerald' : 'hover:bg-slate-800/30'}`}
+                            >
+                              <td className="p-6">
+                                <div className="flex items-center gap-4">
+                                  <div className="w-10 h-10 bg-slate-800 rounded-xl flex items-center justify-center text-[10px] font-black uppercase text-brand-emerald group-hover:bg-brand-emerald group-hover:text-white transition-colors shrink-0">
+                                    <Smartphone size={16} />
+                                  </div>
+                                  <div className="truncate max-w-[150px] sm:max-w-xs text-left">
+                                    <span className="font-bold text-slate-300 group-hover:text-white transition-colors block text-sm truncate">{u.id}</span>
+                                    <span className="text-[9px] text-slate-500 font-bold block mt-0.5">Device Registry Node</span>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="p-6 text-center">
+                                <span className="inline-flex items-center px-3 py-1 bg-brand-emerald/10 border border-brand-emerald/30 text-brand-emerald rounded-full text-[10px] font-black tracking-widest">
+                                  Lv. {level100}
+                                </span>
+                              </td>
+                              <td className="p-6 text-center">
+                                <div className="font-black text-brand-gold text-xs leading-none">{u.points || 0} pts</div>
+                                <div className="text-[9px] text-slate-500 font-bold mt-1 uppercase tracking-tighter">
+                                  {u.totalTasbihCount || 0} Clicked
+                                </div>
+                              </td>
+                              <td className="p-6 text-[10px] font-black text-slate-600 uppercase text-right">
+                                {u.updatedAt ? new Date(u.updatedAt).toLocaleDateString() : 'Offline Sync'}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                        {filteredAndSortedUsers.length === 0 && (
+                          <tr>
+                            <td colSpan={4} className="p-12 text-center text-slate-500 font-bold italic">
+                              No mobile devices registered.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </motion.div>
+
+                {/* DEVICE INSPECTOR COLUMN */}
+                <motion.div 
+                  key="device-inspector-pane"
+                  initial={{ opacity: 0, x: 20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="xl:col-span-5 bg-slate-900/40 backdrop-blur-xl rounded-[2.5rem] border border-slate-800 shadow-2xl p-8 space-y-8"
+                >
+                  {!selectedUser ? (
+                    <div className="text-center py-20 flex flex-col items-center justify-center space-y-4">
+                      <div className="w-20 h-20 bg-slate-800/40 text-slate-600 rounded-3xl flex items-center justify-center border border-slate-800">
+                        <Smartphone size={36} />
+                      </div>
+                      <div className="space-y-1">
+                        <h4 className="font-black text-lg text-slate-300">
+                          {language === 'ku' ? 'مۆبایلێک هەڵبژێرە' : 'Select a Device'}
+                        </h4>
+                        <p className="text-xs text-slate-500 max-w-xs mx-auto leading-relaxed">
+                          {language === 'ku' ? 'تکایە ئامێرێک دەستنیشان بکە لە چەپ بۆ بینینی ئاستی گوزارشتکارانەی ١ تا ١٠٠، ڕێژەکەی، کۆی زیکر و چالاکیەکانی خۆی بەجیا' : 'Select an active device record from the ledger on the left to inspect detailed parameters and activities.'}
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-8">
+                      {/* Header */}
+                      <div className="flex justify-between items-start border-b border-slate-800 pb-6">
+                        <div className="space-y-1.5 text-left">
+                          <span className="px-3 py-1 bg-emerald-500/15 text-brand-emerald border border-brand-emerald/30 rounded-full text-[9px] font-black uppercase tracking-widest inline-flex items-center gap-1.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-brand-emerald animate-pulse" />
+                            {language === 'ku' ? 'چالاکی مۆبایل بەجیا' : 'ACTIVE DEVICE'}
+                          </span>
+                          <h4 className="font-black text-lg text-white truncate max-w-[200px]" title={selectedUser.id}>
+                            {selectedUser.id}
+                          </h4>
+                          <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            {language === 'ku' ? 'مۆبایلی تۆمارکراو بەجیا' : 'SECURE NODE ID'}
+                          </p>
+                        </div>
+                        <button 
+                          onClick={() => setSelectedUser(null)}
+                          className="p-2 bg-slate-800/50 hover:bg-slate-800 text-slate-400 hover:text-white rounded-xl transition-all"
+                        >
+                          ✕
+                        </button>
+                      </div>
+
+                      {/* Score metrics */}
+                      {(() => {
+                        const level100 = getDeviceLevel100(selectedUser);
+                        const points = selectedUser.points || 0;
+                        const tasbihs = selectedUser.totalTasbihCount || 0;
+                        const zikrs = selectedUser.totalZikrsCompleted || 0;
+                        const compositeScore = points + (tasbihs * 2) + (zikrs * 10);
+                        
+                        const currentLevelProgressScore = compositeScore % 250;
+                        const pctNextLevel = Math.round((currentLevelProgressScore / 250) * 100);
+                        
+                        let levelTitle = '';
+                        let levelGrad = 'from-cyan-400 to-blue-500';
+                        if (level100 <= 20) {
+                          levelTitle = language === 'ku' ? 'دڵێکی تینوو (سەرەتایی)' : 'Thirsty Devotee';
+                          levelGrad = 'from-indigo-400 to-blue-500';
+                        } else if (level100 <= 40) {
+                          levelTitle = language === 'ku' ? 'دڵێکی زاکر و ئومێدەوار' : 'Awoken Zakir';
+                          levelGrad = 'from-emerald-400 to-teal-500';
+                        } else if (level100 <= 60) {
+                          levelTitle = language === 'ku' ? 'دڵێکی بەخەبەر و ئارام' : 'Ardent Believer';
+                          levelGrad = 'from-amber-400 to-yellow-500';
+                        } else if (level100 <= 80) {
+                          levelTitle = language === 'ku' ? 'دڵێکی ڕۆشن کەرەوە' : 'Illuminated Sage';
+                          levelGrad = 'from-orange-400 to-red-500';
+                        } else {
+                          levelTitle = language === 'ku' ? 'دڵێکی عاریفی گەیشتوو' : 'Divine Sage';
+                          levelGrad = 'from-purple-400 to-pink-500';
+                        }
+
+                        // Calculate relative Rates: how active is this user compared to top expectations
+                        const generalEngagementRate = Math.min(100, Math.max(5, Math.round((points / 5000) * 100)));
+
+                        return (
+                          <div className="space-y-6">
+                            {/* LEVEL DECK 1 to 100 */}
+                            <div className="p-6 bg-slate-950/60 rounded-3xl border border-slate-800 grid grid-cols-1 gap-4 text-center">
+                              <span className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest block">
+                                {language === 'ku' ? 'ئاستی مۆبایل لە ١ تا ١٠٠ بەپێی زیکر' : 'DEVICE DYNAMIC LEVEL (1 - 100)'}
+                              </span>
+                              <div className="inline-flex relative items-center justify-center mx-auto my-2">
+                                <div className="absolute inset-[-8px] bg-brand-emerald rounded-full opacity-10 blur-xl" />
+                                <div className="w-24 h-24 rounded-full border-4 border-slate-850 flex flex-col items-center justify-center bg-slate-900 relative z-10 shadow-xl">
+                                  <span className="text-3xl font-black text-brand-emerald">{level100}</span>
+                                  <span className="text-[9px] text-slate-500 font-extrabold tracking-widest uppercase block mt-0.5">Scale Index</span>
+                                </div>
+                              </div>
+                              <div className="space-y-1.5">
+                                <h5 className="font-extrabold text-slate-200 text-sm tracking-wide">{levelTitle}</h5>
+                                <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">
+                                  {language === 'ku' ? `کۆی داتای کارایی: ${compositeScore}` : `Spiritual Performance Metric: ${compositeScore}`}
+                                </p>
+                              </div>
+
+                              {/* Progress to next level bar */}
+                              <div className="space-y-2 pt-2 text-right">
+                                <div className="flex justify-between items-center text-[9px] font-bold text-slate-550">
+                                  <span>{pctNextLevel}%</span>
+                                  <span>{language === 'ku' ? 'بەرەو ئاستی داهاتوو' : 'Progress to next level'}</span>
+                                </div>
+                                <div className="w-full h-1.5 bg-slate-900 rounded-full overflow-hidden">
+                                  <div 
+                                    className={`h-full bg-gradient-to-r ${levelGrad} rounded-full transition-all duration-500`}
+                                    style={{ width: `${pctNextLevel}%` }}
+                                  />
+                                </div>
+                              </div>
                             </div>
-                            <span className="font-bold text-slate-300 group-hover:text-white transition-colors">{u.id}</span>
+
+                            {/* Relative individual rates and engagement stats */}
+                            <div className="grid grid-cols-2 gap-4">
+                              <div className="p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl text-right">
+                                <span className="text-[9px] text-slate-500 font-bold block mb-1">
+                                  {language === 'ku' ? 'کۆی تەسپیح' : 'TASBIH CLICKS'}
+                                </span>
+                                <p className="text-lg font-black text-white">{tasbihs}</p>
+                              </div>
+                              <div className="p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl text-right">
+                                <span className="text-[9px] text-slate-500 font-bold block mb-1">
+                                  {language === 'ku' ? 'زیکرەکان' : 'COMPLETED ZIKRS'}
+                                </span>
+                                <p className="text-lg font-black text-white">{zikrs}</p>
+                              </div>
+                              <div className="p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl text-right">
+                                <span className="text-[9px] text-slate-500 font-bold block mb-1">
+                                  {language === 'ku' ? 'ئایەتەکان' : 'QURAN AYAHS'}
+                                </span>
+                                <p className="text-lg font-black text-white">{selectedUser.totalAyahsRead || 0}</p>
+                              </div>
+                              <div className="p-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl text-right">
+                                <span className="text-[9px] text-slate-500 font-bold block mb-1">
+                                  {language === 'ku' ? 'ڕێژەی چالاکی مۆبایلەکە' : 'MOBILE PERFORMANCE RATE'}
+                                </span>
+                                <p className="text-lg font-black text-brand-gold">{generalEngagementRate}%</p>
+                              </div>
+                            </div>
+
+                            {/* Timeline ledger of activities */}
+                            <div className="space-y-4 pt-4 border-t border-slate-850">
+                              <h5 className="text-[10px] font-black text-slate-450 uppercase tracking-widest flex items-center justify-end gap-2 text-right">
+                                <span>{language === 'ku' ? 'رۆژنامەی و مێژووی سەردانی مۆبایلەکە' : 'Mobile Historical Logs'}</span>
+                                <Calendar size={13} className="text-slate-500" />
+                              </h5>
+
+                              <div className="space-y-2 max-h-[180px] overflow-y-auto pr-1">
+                                {(!selectedUser.history || selectedUser.history.length === 0) ? (
+                                  <div className="text-center py-4 text-xs text-slate-500 font-bold italic">
+                                    {language === 'ku' ? 'هیچ تۆمارێکی چالاکی ڕۆژانە نییە' : 'No periodic logs committed yet.'}
+                                  </div>
+                                ) : (
+                                  [...selectedUser.history].reverse().map((day: any, dIdx: number) => (
+                                    <div key={dIdx} className="bg-slate-950/60 p-3 rounded-xl border border-slate-850 flex items-center justify-between text-xs font-mono">
+                                      <div className="flex gap-2 text-[9px] text-slate-500">
+                                        <span>{day.points || 0} pts</span>
+                                        <span>•</span>
+                                        <span>{day.zikrs || 0} zikrs</span>
+                                        {day.ayahs > 0 && (
+                                          <>
+                                            <span>•</span>
+                                            <span>{day.ayahs} ayahs</span>
+                                          </>
+                                        )}
+                                      </div>
+                                      <span className="text-slate-400 text-[10px]">{day.date}</span>
+                                    </div>
+                                  ))
+                                )}
+                              </div>
+                            </div>
                           </div>
-                        </td>
-                        <td className="p-8">
-                          <span className="px-4 py-2 bg-slate-800 border border-slate-700 text-brand-emerald rounded-full text-[10px] font-black uppercase tracking-widest">Lv.{u.level}</span>
-                        </td>
-                        <td className="p-8 font-black text-brand-gold text-sm">{u.points} pts</td>
-                        <td className="p-8 font-bold text-slate-500 text-xs italic">{u.dailyZikrsCompleted} zikrs this cycle</td>
-                        <td className="p-8 text-[10px] font-black text-slate-600 uppercase">
-                          {u.updatedAt ? new Date(u.updatedAt).toLocaleDateString() : 'Sync Failure'}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
+                        );
+                      })()}
+                    </div>
+                  )}
+                </motion.div>
               </div>
-            </motion.div>
-          )}
+            );
+          })()}
         </AnimatePresence>
       </main>
     </div>

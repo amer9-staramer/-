@@ -25,13 +25,15 @@
     },
     "ZikrStat": {
       "title": "Zikr Stat",
-      "description": "Tracking views for specific zikrs",
+      "description": "Tracking views and counts for specific zikrs",
       "type": "object",
       "properties": {
         "id": { "type": "string" },
         "title": { "type": "string" },
         "viewCount": { "type": "number" },
-        "lastViewed": { "type": "string", "format": "date-time" }
+        "lastViewed": { "type": "string", "format": "date-time" },
+        "completionCount": { "type": "number" },
+        "totalClicks": { "type": "number" }
       },
       "required": ["id", "title", "viewCount", "lastViewed"]
     },
@@ -58,6 +60,18 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["arabic", "kurdish", "source", "reference", "topic", "createdAt"]
+    },
+    "GlobalStats": {
+      "title": "Global Stats",
+      "description": "Global real-time stats",
+      "type": "object",
+      "properties": {
+        "deviceCount": { "type": "number" },
+        "totalPoints": { "type": "number" },
+        "totalTasbihCount": { "type": "number" },
+        "totalZikrsCount": { "type": "number" }
+      },
+      "required": ["deviceCount"]
     },
     "Message": {
       "title": "Message",
@@ -97,6 +111,10 @@
     "/messages/{messageId}": {
       "schema": "Message",
       "description": "Stores user feedback messages"
+    },
+    "/global_stats/{statId}": {
+      "schema": "GlobalStats",
+      "description": "Stores global user aggregates and counter statistics"
     }
   }
 }

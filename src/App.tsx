@@ -1570,8 +1570,8 @@ export default function App() {
                     key={zikr.id} 
                     zikr={zikr} 
                     language={language} 
-                    onIncrement={(title) => incrementTasbih(1, title)}
-                    onComplete={(title) => completeZikr(title, zikr.pointsPerComplete || 5)}
+                    onIncrement={(title) => incrementTasbih(1, title, zikr.id.toString())}
+                    onComplete={(title) => completeZikr(title, zikr.pointsPerComplete || 5, 'general', zikr.id.toString())}
                   />
                 ))}
               </div>

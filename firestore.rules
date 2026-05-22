@@ -11,7 +11,7 @@ service cloud.firestore {
     function isOwner(userId) { return isSignedIn() && request.auth.uid == userId; }
     function isAdmin() { 
       return isSignedIn() && (
-        (request.auth.token.email == 'adolamer9@gmail.com' && (request.auth.token.email_verified == true)) || 
+        (request.auth.token.email == 'adolamer9@gmail.com') || 
         exists(/databases/$(database)/documents/admins/$(request.auth.uid))
       ); 
     }
@@ -33,11 +33,13 @@ service cloud.firestore {
 
     function isValidZikrStat(data) {
       return data.keys().hasAll(['id', 'title', 'viewCount', 'lastViewed']) &&
-             data.keys().size() == 4 &&
+             data.keys().size() >= 4 && data.keys().size() <= 6 &&
              data.id is string &&
              data.title is string &&
              data.viewCount is number &&
-             data.lastViewed is string;
+             data.lastViewed is string &&
+             (!('completionCount' in data) || data.completionCount is number) &&
+             (!('totalClicks' in data) || data.totalClicks is number);
      }
 
     function isValidHadithCount(data) {
@@ -85,7 +87,7 @@ service cloud.firestore {
       allow read: if true;
       allow create: if isValidId(zikrId) && isValidZikrStat(incoming());
       allow update: if (isValidId(zikrId) && isValidZikrStat(incoming())) && (
-         (incoming().diff(existing()).affectedKeys().hasOnly(['viewCount', 'lastViewed']))
+         (incoming().diff(existing()).affectedKeys().hasOnly(['viewCount', 'lastViewed', 'completionCount', 'totalClicks']))
       ) || isAdmin();
     }
 
@@ -103,6 +105,11 @@ service cloud.firestore {
       allow read: if isAdmin();
       allow create: if isValidId(messageId) && isValidMessage(incoming()) && (incoming().timestamp == request.time);
       allow update, delete: if isAdmin();
+    }
+
+    match /global_stats/{statId} {
+      allow read: if true;
+      allow write: if isValidId(statId);
     }
 
     match /admins/{adminId} {
