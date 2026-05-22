@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { doc, getDoc, setDoc, updateDoc, onSnapshot, addDoc, collection, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
-import { onAuthStateChanged } from 'firebase/auth';
+import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
 
 export interface UserStats {
@@ -83,6 +83,10 @@ export function useUserStats() {
         syncWithFirestore(user.uid);
       } else {
         setUserId(null);
+        // Automatically sign in anonymously so every device gets a unique ID
+        signInAnonymously(auth).catch((err) => {
+          console.warn("Silent anonymous authentication failed (may be disabled in console):", err);
+        });
       }
     });
     return () => unsubscribe();

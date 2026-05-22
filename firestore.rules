@@ -57,6 +57,16 @@ service cloud.firestore {
              data.createdAt is string;
     }
 
+    function isValidMessage(data) {
+      return data.keys().hasAll(['name', 'message', 'timestamp', 'email']) &&
+             data.keys().size() >= 4 && data.keys().size() <= 5 &&
+             data.name is string && data.name.size() <= 200 &&
+             data.message is string && data.message.size() <= 10000 &&
+             data.email is string && data.email.size() <= 200 &&
+             data.timestamp is timestamp &&
+             (!('userId' in data) || data.userId == null || data.userId is string);
+    }
+
     match /users/{userId} {
       allow get: if isOwner(userId) || isAdmin();
       allow list: if isAdmin(); 
@@ -87,6 +97,12 @@ service cloud.firestore {
     match /hadiths/{hadithId} {
       allow read: if true;
       allow write: if isAdmin() && isValidId(hadithId) && isValidHadith(incoming());
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAdmin();
+      allow create: if isValidId(messageId) && isValidMessage(incoming()) && (incoming().timestamp == request.time);
+      allow update, delete: if isAdmin();
     }
 
     match /admins/{adminId} {

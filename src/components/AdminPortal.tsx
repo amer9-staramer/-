@@ -39,7 +39,8 @@ import {
   updateDoc,
   deleteDoc,
   increment,
-  setDoc
+  setDoc,
+  onSnapshot
 } from 'firebase/firestore';
 import { 
   ResponsiveContainer, 
@@ -254,6 +255,64 @@ export function AdminPortal({ onBack, language }: { onBack: () => void, language
     });
     return () => unsubscribe();
   }, []);
+
+  // Real-time updates for Users (statistics, active devices, total tasbihs)
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const unsubscribe = onSnapshot(collection(db, 'users'), (snapshot) => {
+      const usersList: any[] = [];
+      let totalPoints = 0;
+      let totalTasbihCount = 0;
+
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        usersList.push({ id: doc.id, ...data });
+        totalPoints += data.points || 0;
+        totalTasbihCount += data.totalTasbihCount || 0;
+      });
+
+      setStats(prev => {
+        const base = prev || { zikrStats: [], hadiths: [], messages: [] };
+        return {
+          ...base,
+          totalUsers: snapshot.size,
+          totalPoints,
+          totalTasbihCount,
+          usersList
+        } as any;
+      });
+    }, (error) => {
+      console.error("Error listening to users:", error);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
+
+  // Real-time updates for Feedback Messages
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const q = query(collection(db, 'messages'), orderBy('timestamp', 'desc'), limit(50));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const messagesList: any[] = [];
+      snapshot.forEach((doc) => {
+        messagesList.push({ id: doc.id, ...doc.data() });
+      });
+
+      setStats(prev => {
+        const base = prev || { totalUsers: 0, totalPoints: 0, totalTasbihCount: 0, usersList: [], zikrStats: [], hadiths: [] };
+        return {
+          ...base,
+          messages: messagesList
+        } as any;
+      });
+    }, (error) => {
+      console.error("Error listening to messages:", error);
+    });
+
+    return () => unsubscribe();
+  }, [isAdmin]);
 
   const checkAdmin = async (uid: string) => {
     try {

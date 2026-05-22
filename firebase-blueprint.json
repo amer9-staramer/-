@@ -58,6 +58,19 @@
         "createdAt": { "type": "string", "format": "date-time" }
       },
       "required": ["arabic", "kurdish", "source", "reference", "topic", "createdAt"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "User feedback and critique messages",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string" },
+        "name": { "type": "string" },
+        "message": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "email": { "type": "string" }
+      },
+      "required": ["name", "message", "timestamp", "email"]
     }
   },
   "firestore": {
@@ -80,6 +93,10 @@
     "/hadiths/{hadithId}": {
       "schema": "Hadith",
       "description": "Stores individual hadiths"
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Stores user feedback messages"
     }
   }
 }
