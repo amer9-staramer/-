@@ -45,7 +45,7 @@ export function ZakatCalculator({ language, t }: ZakatCalculatorProps) {
               value={amount}
               onChange={(e) => setAmount(e.target.value)}
               placeholder="0.00"
-              className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-lg font-bold outline-none focus:ring-4 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 transition-all"
+              className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-2xl text-lg font-bold outline-none focus:ring-4 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 transition-all dark:text-white"
             />
           </div>
         </div>
@@ -62,16 +62,16 @@ export function ZakatCalculator({ language, t }: ZakatCalculatorProps) {
           <motion.div 
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
-            className="pt-6 border-t border-slate-50"
+            className="pt-6 border-t border-slate-50 dark:border-slate-800"
           >
             {result > 0 ? (
-              <div className="bg-brand-emerald/5 p-6 rounded-3xl border border-brand-emerald/10 flex flex-col items-center text-center">
+              <div className="bg-brand-emerald/5 dark:bg-brand-emerald/10 p-6 rounded-3xl border border-brand-emerald/10 dark:border-brand-emerald/20 flex flex-col items-center text-center">
                 <span className="text-xs font-black text-brand-emerald uppercase tracking-widest mb-2">{t.zakatResult}</span>
                 <span className="text-4xl font-black text-brand-emerald">{result.toLocaleString()}</span>
-                <p className="text-xs text-slate-400 mt-4 font-bold">بڕی ٢.٥٪ لە کۆی گشتی سەرمایەکەت</p>
+                <p className="text-xs text-slate-400 dark:text-slate-500 mt-4 font-bold">بڕی ٢.٥٪ لە کۆی گشتی سەرمایەکەت</p>
               </div>
             ) : (
-              <div className="bg-amber-50 p-6 rounded-3xl border border-amber-100 flex items-center gap-4 text-amber-600">
+              <div className="bg-amber-50 dark:bg-amber-900/10 p-6 rounded-3xl border border-amber-100 dark:border-amber-900/20 flex items-center gap-4 text-amber-600 dark:text-amber-400">
                 <AlertCircle size={24} />
                 <p className="text-sm font-bold">{t.nisabWarning}</p>
               </div>

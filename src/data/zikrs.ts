@@ -563,5 +563,25 @@ export const zikrs: Zikr[] = [
     count: 10,
     category: 'general',
     pointsPerComplete: 5
+  },
+  {
+    id: 'sal1',
+    text: 'اللَّهُمَّ صَلِّ عَلَى مُحَمَّدٍ وَعَلَى آلِ مُحَمَّدٍ',
+    translationKu: 'خودایە دروود و سڵاو بنێرە بۆ سەر محەممەد و خێزانی محەممەد.',
+    translationEn: 'O Allah, send blessings upon Muhammad and upon the family of Muhammad.',
+    translationAr: 'تفسير: الصلاة على النبي ﷺ من أعظم القربات، خاصة في يوم الجمعة.',
+    count: 10,
+    category: 'general',
+    pointsPerComplete: 10
+  },
+  {
+    id: 'sal2',
+    text: 'اللَّهُمَّ صَلِّ وَسَلِّمْ عَلَى نَبَيِّنَا مُحَمَّدٍ',
+    translationKu: 'خودایە دروود و سڵاو بنێرە بۆ سەر پێغەمبەرەکەمان محەممەد.',
+    translationEn: 'O Allah, send peace and blessings upon our Prophet Muhammad.',
+    translationAr: 'تفسير: صيغة مختصرة للصلاة على النبي ﷺ، تنال بها شفاعته.',
+    count: 10,
+    category: 'general',
+    pointsPerComplete: 10
   }
 ];

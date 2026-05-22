@@ -24,16 +24,16 @@ export function NamesOfAllah({ language, t }: NamesOfAllahProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.02 }}
             key={name.id}
-            className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
           >
-            <div className="w-10 h-10 bg-brand-emerald/5 rounded-xl flex items-center justify-center text-brand-emerald/20 text-[10px] font-black mb-3 group-hover:bg-brand-emerald group-hover:text-white transition-all">
+            <div className="w-10 h-10 bg-brand-emerald/5 dark:bg-brand-emerald/20 rounded-xl flex items-center justify-center text-brand-emerald/20 text-[10px] font-black mb-3 group-hover:bg-brand-emerald group-hover:text-white transition-all">
               {name.id}
             </div>
-            <h3 className="text-2xl font-bold text-slate-800 mb-4 quran-font" dir="rtl">{name.arabic}</h3>
+            <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100 mb-4 quran-font" dir="rtl">{name.arabic}</h3>
             <div className="space-y-1">
-              <p className="text-xs font-black text-brand-emerald uppercase tracking-tighter">{name.transliteration}</p>
-              <p className="text-sm font-bold text-slate-600 font-kurdish-display">{name.kurdish}</p>
-              <p className="text-[10px] text-slate-400 font-medium leading-relaxed mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
+              <p className="text-xs font-black text-brand-emerald dark:text-brand-gold uppercase tracking-tighter">{name.transliteration}</p>
+              <p className="text-sm font-bold text-slate-600 dark:text-slate-300 font-kurdish-display">{name.kurdish}</p>
+              <p className="text-[10px] text-slate-400 dark:text-slate-500 font-medium leading-relaxed mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                 {name.meaning}
               </p>
             </div>

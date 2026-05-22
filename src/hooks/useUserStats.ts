@@ -20,20 +20,14 @@ export interface UserStats {
     ayahs: number;
     points: number;
   }[];
-  wallet?: {
-    balance: number;
-    lockedBalance: number;
-    lastWithdrawalDate?: string;
-    unlockedAt?: string; // Date when locked balance becomes available
-  };
 }
 
 const LEVELS = [
-  { level: 1, minPoints: 0, title: { ku: 'دڵێکی تینوو', en: 'Thirsty Heart', ar: 'قلب عطشان' }, color: 'text-red-500', reward: 250 },
-  { level: 2, minPoints: 5000, title: { ku: 'دڵێکی بەخەبەر', en: 'Awake Heart', ar: 'قلب يقظ' }, color: 'text-orange-500', reward: 500 },
-  { level: 3, minPoints: 15000, title: { ku: 'دڵێکی ئارام', en: 'Peaceful Heart', ar: 'قلب مطمئن' }, color: 'text-emerald-400', reward: 1000 },
-  { level: 4, minPoints: 30000, title: { ku: 'دڵێکی زیندوو', en: 'Alive Heart', ar: 'قلب حي' }, color: 'text-emerald-700', reward: 1250 },
-  { level: 5, minPoints: 50000, title: { ku: 'دڵێکی ڕەبانی', en: 'Rabani Heart', ar: 'قلب رباني' }, color: 'text-brand-gold', reward: 2000 },
+  { level: 1, minPoints: 0, title: { ku: 'دڵێکی تینوو', en: 'Thirsty Heart', ar: 'قلب عطشان' }, color: 'text-red-500' },
+  { level: 2, minPoints: 5000, title: { ku: 'دڵێکی بەخەبەر', en: 'Awake Heart', ar: 'قلب يقظ' }, color: 'text-orange-500' },
+  { level: 3, minPoints: 15000, title: { ku: 'دڵێکی ئارام', en: 'Peaceful Heart', ar: 'قلب مطمئن' }, color: 'text-emerald-400' },
+  { level: 4, minPoints: 30000, title: { ku: 'دڵێکی زیندوو', en: 'Alive Heart', ar: 'قلب حي' }, color: 'text-emerald-700' },
+  { level: 5, minPoints: 50000, title: { ku: 'دڵێکی ڕەبانی', en: 'Rabani Heart', ar: 'قلب رباني' }, color: 'text-brand-gold' },
 ];
 
 export function useUserStats() {
@@ -48,11 +42,7 @@ export function useUserStats() {
       badges: [],
       updatedAt: new Date().toISOString(),
       joinedAt: new Date().toISOString(),
-      history: [],
-      wallet: {
-        balance: 0,
-        lockedBalance: 0
-      }
+      history: []
     };
     
     if (!saved) return defaultStats;
@@ -62,46 +52,27 @@ export function useUserStats() {
       ...defaultStats,
       ...parsed,
       joinedAt: parsed.joinedAt || (parsed.history && parsed.history.length > 0 ? parsed.history[0].date : defaultStats.joinedAt),
-      history: parsed.history || [],
-      wallet: parsed.wallet || defaultStats.wallet
+      history: parsed.history || []
     };
   });
 
-  // Effect to check and apply end-of-month rewards and locking
-  useEffect(() => {
-    const checkMonthTransition = () => {
-      const now = new Date();
-      const currentMonthKey = now.toISOString().substring(0, 7); // YYYY-MM
-      const lastRewardCheck = localStorage.getItem('last_reward_month');
+  // Helper for holytimes (Friday / Friday Eve)
+  const isHolyTime = () => {
+    const now = new Date();
+    const day = now.getDay();
+    const hour = now.getHours();
+    // Friday starts Thursday after 6 PM (18:00) and ends Friday midnight
+    if ((day === 4 && hour >= 18) || (day === 5)) return true;
+    return false;
+  };
 
-      if (lastRewardCheck && lastRewardCheck !== currentMonthKey) {
-        // Month has changed!
-        setStats(prev => {
-          const currentWallet = prev.wallet || { balance: 0, lockedBalance: 0 };
-          
-          if (prev.level < 5 && currentWallet.balance > 0) {
-            // Did not reach level 5 (100% completion)
-            // Move current balance to locked balance
-            const sixMonthsLater = new Date();
-            sixMonthsLater.setMonth(sixMonthsLater.getMonth() + 6);
-            
-            return {
-              ...prev,
-              wallet: {
-                ...currentWallet,
-                balance: 0,
-                lockedBalance: currentWallet.lockedBalance + currentWallet.balance,
-                unlockedAt: sixMonthsLater.toISOString()
-              }
-            };
-          }
-          return prev;
-        });
-      }
-      localStorage.setItem('last_reward_month', currentMonthKey);
-    };
-    checkMonthTransition();
-  }, []);
+  const getTimingMultiplier = (category: string) => {
+    const hour = new Date().getHours();
+    if (category === 'morning' && (hour >= 5 && hour < 11)) return 2;
+    if (category === 'evening' && (hour >= 16 && hour < 19)) return 2;
+    if (category === 'night' && (hour >= 20 || hour < 4)) return 2;
+    return 1;
+  };
 
   const [userId, setUserId] = useState<string | null>(null);
 
@@ -127,8 +98,7 @@ export function useUserStats() {
           setStats(prev => ({
             ...prev,
             ...firestoreData,
-            history: firestoreData.history || prev.history || [],
-            wallet: firestoreData.wallet || prev.wallet
+            history: firestoreData.history || prev.history || []
           }));
         } else {
           await setDoc(doc(db, 'users', uid), {
@@ -184,25 +154,17 @@ export function useUserStats() {
       
       const newPoints = prev.points + amountPoints;
       let newLevel = prev.level;
-      let rewardToAdd = 0;
 
       LEVELS.forEach(l => {
         if (newPoints >= l.minPoints && l.level > prev.level) {
           newLevel = l.level;
-          rewardToAdd += (l as any).reward || 0;
         }
       });
-
-      const currentWallet = prev.wallet || { balance: 0, lockedBalance: 0 };
 
       return {
         ...prev,
         points: newPoints,
         level: newLevel,
-        wallet: {
-          ...currentWallet,
-          balance: currentWallet.balance + rewardToAdd
-        },
         totalAyahsRead: type === 'ayah' ? prev.totalAyahsRead + 1 : prev.totalAyahsRead,
         totalZikrsCompleted: type === 'zikr' ? prev.totalZikrsCompleted + 1 : prev.totalZikrsCompleted,
         history,
@@ -225,20 +187,38 @@ export function useUserStats() {
     });
   };
 
-  const incrementTasbih = (count: number = 1) => {
+  const incrementTasbih = (count: number = 1, zikrTitle: string = '') => {
     setStats(prev => ({ ...prev, totalTasbihCount: prev.totalTasbihCount + count }));
-    addPoints(count); 
+    
+    // Base points for tasbih is usually 1 point per click
+    let finalPoints = count;
+    
+    // Holy Time Multiplier (Holy Thursday night or Friday day)
+    const holyMultiplier = isHolyTime() ? 2 : 1;
+    
+    // Salawat specific bonus on Holy Times
+    const isSalawat = zikrTitle.includes('صلوات') || zikrTitle.toLowerCase().includes('salawat') || zikrTitle.includes('سڵاوات');
+    const salawatMultiplier = (isHolyTime() && isSalawat) ? 2 : 1;
+    
+    finalPoints = count * holyMultiplier * salawatMultiplier;
+    
+    addPoints(finalPoints); 
   };
 
-  const isFriday = () => new Date().getDay() === 5;
-
-  const completeZikr = (zikrTitle: string = '', basePoints: number = 5) => {
+  const completeZikr = (zikrTitle: string = '', basePoints: number = 5, category: string = 'general') => {
     let finalPoints = basePoints;
     
-    // Friday Boost: Salawat
-    if (isFriday() && (zikrTitle.includes('صلوات') || zikrTitle.toLowerCase().includes('salawat'))) {
-      finalPoints = 10;
-    }
+    // Holy Time Multiplier (Holy Thursday night or Friday day)
+    const holyMultiplier = isHolyTime() ? 2 : 1;
+    
+    // Timing Multiplier (Morning Zikr in morning, etc.)
+    const timingMultiplier = getTimingMultiplier(category);
+    
+    // Salawat specific bonus on Holy Times
+    const isSalawat = zikrTitle.includes('صلوات') || zikrTitle.toLowerCase().includes('salawat') || zikrTitle.includes('سڵاوات');
+    const salawatMultiplier = (isHolyTime() && isSalawat) ? 2 : 1;
+
+    finalPoints = basePoints * holyMultiplier * timingMultiplier * salawatMultiplier;
     
     updateHistory('zikr', finalPoints); 
   };
@@ -247,9 +227,10 @@ export function useUserStats() {
     let finalPoints = 5;
     
     // Friday Boost: Al-Kahf
-    if (isFriday() && isKahf) {
-      finalPoints = 10;
-    }
+    const holyMultiplier = isHolyTime() ? 2 : 1;
+    const kahfMultiplier = (isHolyTime() && isKahf) ? 2 : 1;
+
+    finalPoints = finalPoints * holyMultiplier * kahfMultiplier;
     
     updateHistory('ayah', finalPoints); 
   };
@@ -279,6 +260,7 @@ export function useUserStats() {
     incrementTasbih,
     completeZikr,
     completeAyah,
+    isHolyTime,
     currentLevelInfo,
     nextLevelInfo,
     sendFeedback,

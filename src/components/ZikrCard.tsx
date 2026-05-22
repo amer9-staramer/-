@@ -9,8 +9,8 @@ import { db } from '../lib/firebase';
 export interface ZikrCardProps {
   zikr: Zikr;
   language: 'ku' | 'en' | 'ar';
-  onComplete?: () => void;
-  onIncrement?: () => void;
+  onComplete?: (zikrTitle: string) => void;
+  onIncrement?: (zikrTitle: string) => void;
 }
 
 export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardProps) => {
@@ -49,10 +49,10 @@ export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardPr
     if (currentCount < zikr.count) {
       const nextCount = currentCount + 1;
       setCurrentCount(nextCount);
-      if (onIncrement) onIncrement();
+      if (onIncrement) onIncrement(zikr.text);
       
       if (nextCount === zikr.count && onComplete) {
-        onComplete();
+        onComplete(zikr.text);
       }
       
       // Increment total count in localStorage for stats
@@ -78,23 +78,23 @@ export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardPr
       animate={{ opacity: 1, y: 0 }}
       className={`relative p-6 rounded-2xl cursor-pointer transition-all border-2 ${
         isCompleted 
-          ? 'bg-emerald-50 border-brand-emerald/20 shadow-inner' 
-          : 'bg-white border-transparent shadow-md hover:shadow-xl hover:border-brand-emerald/10'
+          ? 'bg-emerald-50 dark:bg-emerald-900/20 border-brand-emerald/20 shadow-inner' 
+          : 'bg-white dark:bg-slate-900 border-transparent dark:border-slate-800 shadow-md hover:shadow-xl hover:border-brand-emerald/10'
       }`}
     >
       <div className="flex justify-center items-center mb-6">
         <div 
           onClick={increment}
-          className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900/50 px-8 py-3 rounded-2xl border-2 border-brand-emerald/10 hover:border-brand-emerald/30 transition-all active:scale-95 group/counter"
+          className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800/50 px-8 py-3 rounded-2xl border-2 border-brand-emerald/10 hover:border-brand-emerald/30 transition-all active:scale-95 group/counter"
         >
           <div className="text-center">
-            <div className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-1 group-hover/counter:text-brand-emerald transition-colors">
+            <div className="text-[10px] uppercase tracking-widest font-black text-slate-400 mb-1 group-hover/counter:text-brand-emerald dark:group-hover/counter:text-brand-gold transition-colors">
               {language === 'ku' ? 'ماوە' : language === 'ar' ? 'المتبقي' : 'Remaining'}
             </div>
             <div className="flex items-center gap-2">
-              <span className="text-4xl font-black text-brand-emerald">{zikr.count - currentCount}</span>
+              <span className="text-4xl font-black text-brand-emerald dark:text-brand-gold">{zikr.count - currentCount}</span>
               {zikr.count > 1 && (
-                <div className="flex flex-col text-[10px] font-bold text-slate-300">
+                <div className="flex flex-col text-[10px] font-bold text-slate-300 dark:text-slate-600">
                   <span>/</span>
                   <span>{zikr.count}</span>
                 </div>

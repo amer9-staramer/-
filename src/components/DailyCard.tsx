@@ -56,12 +56,12 @@ export function DailyCard({ language, t }: DailyCardProps) {
   return (
     <div className="space-y-10">
       {/* Type Selector */}
-      <div className="flex bg-white p-2 rounded-[2rem] shadow-sm border border-slate-100 max-w-sm mx-auto">
+      <div className="flex bg-white dark:bg-slate-900 p-2 rounded-[2rem] shadow-sm border border-slate-100 dark:border-slate-800 max-w-sm mx-auto">
         {(['zikr', 'wisdom', 'hadith'] as const).map((tType) => (
           <button
             key={tType}
             onClick={() => setType(tType)}
-            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black transition-all ${type === tType ? 'bg-brand-emerald text-white shadow-lg' : 'text-slate-400 hover:bg-slate-50'}`}
+            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-2xl text-xs font-black transition-all ${type === tType ? 'bg-brand-emerald text-white shadow-lg' : 'text-slate-400 dark:text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800'}`}
           >
             {tType === 'zikr' && <Stars size={14} />}
             {tType === 'wisdom' && <BookOpen size={14} />}
@@ -161,7 +161,7 @@ export function DailyCard({ language, t }: DailyCardProps) {
               value={dedicationName}
               onChange={(e) => setDedicationName(e.target.value)}
               placeholder={t.deceasedNamePlaceholder}
-              className="flex-1 bg-white border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-emerald/20"
+              className="flex-1 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:ring-2 focus:ring-brand-emerald/20 dark:text-white"
             />
             <button 
               onClick={() => setIsDedicating(false)} 
@@ -173,7 +173,7 @@ export function DailyCard({ language, t }: DailyCardProps) {
         ) : (
           <button 
             onClick={() => setIsDedicating(true)}
-            className="w-full py-3 bg-white/50 border border-dashed border-slate-200 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 hover:bg-white hover:text-brand-emerald transition-all"
+            className="w-full py-3 bg-white/50 dark:bg-slate-900/50 border border-dashed border-slate-200 dark:border-slate-800 rounded-2xl text-[10px] font-black uppercase tracking-widest text-slate-400 dark:text-slate-500 hover:bg-white dark:hover:bg-slate-900 hover:text-brand-emerald transition-all"
           >
             + {t.sadaqahJariyah}
           </button>

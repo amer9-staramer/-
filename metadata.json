@@ -2,5 +2,5 @@
   "name": "زیکرەکان - Zikrakan",
   "description": "ئەپڵیکەیشنێکی تایبەت بۆ زیکرەکان، قورئانی پيرۆز و فەرموودە ڕاستەکانی پێغەمبەر ﷺ بە دیزاینێکی مۆدێرن و سەرنجڕاکێش.",
   "requestFramePermissions": [],
-  "majorCapabilities": []
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

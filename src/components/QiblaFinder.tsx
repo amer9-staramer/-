@@ -52,9 +52,9 @@ export function QiblaFinder({ language, t }: QiblaFinderProps) {
 
   if (error) {
     return (
-      <div className="bg-rose-50 p-8 rounded-[3rem] border border-rose-100 text-center">
-        <p className="text-rose-600 font-bold">{error}</p>
-        <p className="text-xs text-rose-400 mt-2">تکایە دڵنیابەرەوە لە هەبوونی دەستپێگەیشتن بە شوێن (GPS)</p>
+      <div className="bg-rose-50 dark:bg-rose-950/20 p-8 rounded-[3rem] border border-rose-100 dark:border-rose-900/30 text-center">
+        <p className="text-rose-600 dark:text-rose-400 font-bold">{error}</p>
+        <p className="text-xs text-rose-400 dark:text-rose-500 mt-2">تکایە دڵنیابەرەوە لە هەبوونی دەستپێگەیشتن بە شوێن (GPS)</p>
       </div>
     );
   }
@@ -72,21 +72,21 @@ export function QiblaFinder({ language, t }: QiblaFinderProps) {
   return (
     <div className="flex flex-col items-center space-y-12 py-10">
       <div className="text-center space-y-2">
-        <h2 className="text-3xl font-black text-brand-emerald">{t.qibla}</h2>
-        <p className="text-slate-400 font-bold uppercase tracking-widest text-[10px]">Distance to Kaaba: ~{2000}km</p>
+        <h2 className="text-3xl font-black text-brand-emerald dark:text-brand-gold">{t.qibla}</h2>
+        <p className="text-slate-400 dark:text-slate-500 font-bold uppercase tracking-widest text-[10px]">Distance to Kaaba: ~{2000}km</p>
       </div>
 
-      <div className="relative w-80 h-80 rounded-full border-8 border-slate-100 bg-white shadow-2xl flex items-center justify-center">
+      <div className="relative w-80 h-80 rounded-full border-8 border-slate-100 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xl flex items-center justify-center">
         {/* Compass Dial */}
         <motion.div 
           animate={{ rotate: - (heading || 0) }}
           className="absolute inset-0 p-4 transition-transform duration-500"
         >
-          <div className="w-full h-full rounded-full border-2 border-slate-50 relative">
+          <div className="w-full h-full rounded-full border-2 border-slate-50 dark:border-slate-800/50 relative">
              <div className="absolute top-2 left-1/2 -translate-x-1/2 font-black text-rose-500 text-lg">N</div>
-             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-black text-slate-300 text-lg">S</div>
-             <div className="absolute right-2 top-1/2 -translate-y-1/2 font-black text-slate-300 text-lg">E</div>
-             <div className="absolute left-2 top-1/2 -translate-y-1/2 font-black text-slate-300 text-lg">W</div>
+             <div className="absolute bottom-2 left-1/2 -translate-x-1/2 font-black text-slate-300 dark:text-slate-700 text-lg">S</div>
+             <div className="absolute right-2 top-1/2 -translate-y-1/2 font-black text-slate-300 dark:text-slate-700 text-lg">E</div>
+             <div className="absolute left-2 top-1/2 -translate-y-1/2 font-black text-slate-300 dark:text-slate-700 text-lg">W</div>
           </div>
         </motion.div>
 

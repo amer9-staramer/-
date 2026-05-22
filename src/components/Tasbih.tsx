@@ -7,7 +7,7 @@ import { zikrs } from '../data/zikrs';
 interface TasbihProps {
   language: 'ku' | 'ar' | 'en';
   t: any;
-  onIncrement?: (count: number) => void;
+  onIncrement?: (count: number, text: string) => void;
 }
 
 export function Tasbih({ language, t, onIncrement }: TasbihProps) {
@@ -21,7 +21,7 @@ export function Tasbih({ language, t, onIncrement }: TasbihProps) {
     const newCount = count + 1;
     const newTotal = total + 1;
     
-    if (onIncrement) onIncrement(1);
+    if (onIncrement) onIncrement(1, selectedZikr.text);
     
     if (newCount === target) {
       if (navigator.vibrate) {
@@ -55,13 +55,13 @@ export function Tasbih({ language, t, onIncrement }: TasbihProps) {
       <div className="w-full max-w-sm">
         <button 
           onClick={() => setShowZikrList(!showZikrList)}
-          className="w-full bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col items-center text-center group hover:shadow-md transition-all"
+          className="w-full bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center group hover:shadow-md transition-all"
         >
           <div className="flex items-center gap-2 mb-2 text-[10px] font-black text-brand-emerald/40 uppercase tracking-widest">
             <List size={12} /> {t.selectZikr || (language === 'ku' ? 'زیکرێک هەڵبژێرە' : 'Select Zikr')}
           </div>
-          <p className="text-xl font-bold text-slate-800 leading-relaxed truncate w-full" dir="rtl">{selectedZikr.text}</p>
-          <p className="text-xs font-medium text-slate-400 mt-2 italic">
+          <p className="text-xl font-bold text-slate-800 dark:text-slate-100 leading-relaxed truncate w-full" dir="rtl">{selectedZikr.text}</p>
+          <p className="text-xs font-medium text-slate-400 dark:text-slate-500 mt-2 italic">
             {language === 'en' ? selectedZikr.translationEn : selectedZikr.translationKu}
           </p>
         </button>
@@ -72,7 +72,7 @@ export function Tasbih({ language, t, onIncrement }: TasbihProps) {
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="mt-2 bg-white rounded-3xl shadow-xl border border-slate-100 p-2 space-y-1 max-h-60 overflow-y-auto z-20 relative scrollbar-hide"
+              className="mt-2 bg-white dark:bg-slate-900 rounded-3xl shadow-xl border border-slate-100 dark:border-slate-800 p-2 space-y-1 max-h-60 overflow-y-auto z-20 relative scrollbar-hide"
             >
               {tasbihZikrs.map(z => (
                 <button
@@ -83,7 +83,7 @@ export function Tasbih({ language, t, onIncrement }: TasbihProps) {
                     setCount(0);
                     setShowZikrList(false);
                   }}
-                  className={`w-full text-right p-4 rounded-2xl transition-all ${selectedZikr.id === z.id ? 'bg-brand-emerald/10 text-brand-emerald' : 'hover:bg-slate-50 text-slate-600'}`}
+                  className={`w-full text-right p-4 rounded-2xl transition-all ${selectedZikr.id === z.id ? 'bg-brand-emerald/10 text-brand-emerald' : 'hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400'}`}
                   dir="rtl"
                 >
                   <p className="font-bold text-sm">{z.text}</p>
@@ -97,7 +97,7 @@ export function Tasbih({ language, t, onIncrement }: TasbihProps) {
 
       <div className="relative group">
         {/* Outer Ring */}
-        <div className="w-72 h-72 rounded-full border-8 border-slate-100 flex items-center justify-center relative bg-white shadow-2xl">
+        <div className="w-72 h-72 rounded-full border-8 border-slate-100 dark:border-slate-800 flex items-center justify-center relative bg-white dark:bg-slate-900 shadow-2xl">
           <svg className="absolute inset-0 w-full h-full -rotate-90">
             <circle
               cx="144"
@@ -140,13 +140,13 @@ export function Tasbih({ language, t, onIncrement }: TasbihProps) {
         {/* Reset Button */}
         <button
           onClick={reset}
-          className="absolute -bottom-4 -right-4 bg-white p-4 rounded-2xl shadow-lg border border-slate-100 text-slate-400 hover:text-brand-emerald hover:rotate-180 transition-all duration-500"
+          className="absolute -bottom-4 -right-4 bg-white dark:bg-slate-800 p-4 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-800 text-slate-400 hover:text-brand-emerald hover:rotate-180 transition-all duration-500"
         >
           <RefreshCw size={24} />
         </button>
 
         {/* Target Switcher */}
-        <div className="absolute -bottom-4 -left-4 flex bg-white rounded-2xl shadow-lg border border-slate-100 overflow-hidden">
+        <div className="absolute -bottom-4 -left-4 flex bg-white dark:bg-slate-800 rounded-2xl shadow-lg border border-slate-100 dark:border-slate-800 overflow-hidden">
           {[33, 99, 100].map(val => (
             <button
               key={val}

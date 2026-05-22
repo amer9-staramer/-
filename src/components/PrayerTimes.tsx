@@ -109,7 +109,7 @@ export function PrayerTimes({ language, t }: PrayerTimesProps) {
       {activeTab === 'times' ? (
         <>
           {/* City Selector */}
-          <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 space-y-4">
+          <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
                 {cities.map(city => (
@@ -120,14 +120,14 @@ export function PrayerTimes({ language, t }: PrayerTimesProps) {
                       setCountryName('Iraq');
                       setIsCustomMode(false);
                     }}
-                    className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all flex-shrink-0 ${cityName === city.nameEn && !isCustomMode ? 'bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20' : 'bg-slate-50 text-slate-400 hover:bg-slate-100'}`}
+                    className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all flex-shrink-0 ${cityName === city.nameEn && !isCustomMode ? 'bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20' : 'bg-slate-50 dark:bg-slate-800 text-slate-400 dark:text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-700'}`}
                   >
                     {language === 'en' ? city.nameEn : language === 'ar' ? city.nameAr : city.nameKu}
                   </button>
                 ))}
                 <button
                    onClick={() => setIsCustomMode(!isCustomMode)}
-                   className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all flex-shrink-0 ${isCustomMode ? 'bg-brand-emerald text-white' : 'bg-brand-gold/10 text-brand-gold'}`}
+                   className={`px-6 py-2.5 rounded-2xl text-xs font-black transition-all flex-shrink-0 ${isCustomMode ? 'bg-brand-emerald text-white' : 'bg-brand-gold/10 text-brand-gold dark:bg-brand-gold/20 dark:text-brand-gold'}`}
                 >
                   {language === 'en' ? 'Custom Location' : 'شوێنی تر'}
                 </button>
@@ -135,24 +135,24 @@ export function PrayerTimes({ language, t }: PrayerTimesProps) {
             </div>
 
             {isCustomMode && (
-              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50">
+              <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-50 dark:border-slate-800">
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{t.city || 'City'}</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2">{t.city || 'City'}</label>
                   <input 
                     type="text" 
                     value={cityName}
                     onChange={(e) => setCityName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-emerald"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-emerald dark:text-white"
                     placeholder="City Name"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-2">{t.country || 'Country'}</label>
+                  <label className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest px-2">{t.country || 'Country'}</label>
                   <input 
                     type="text" 
                     value={countryName}
                     onChange={(e) => setCountryName(e.target.value)}
-                    className="w-full bg-slate-50 border border-slate-100 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-emerald"
+                    className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-700 rounded-xl px-4 py-2 text-sm font-bold outline-none focus:border-brand-emerald dark:text-white"
                     placeholder="Country Name"
                   />
                 </div>
@@ -161,39 +161,39 @@ export function PrayerTimes({ language, t }: PrayerTimesProps) {
           </div>
 
           {/* Main Prayer Times Card */}
-          <div className="bg-white p-8 rounded-[3rem] shadow-sm border border-slate-100 relative overflow-hidden">
+          <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-48 h-48 bg-brand-emerald/5 rounded-full -mr-24 -mt-24"></div>
             <div className="flex flex-col md:flex-row md:items-center justify-between relative mb-8 gap-6">
               <div className="space-y-2">
                 <div className="flex items-center gap-4">
-                  <h2 className="text-3xl font-black text-brand-emerald">{t.prayerTimes}</h2>
+                  <h2 className="text-3xl font-black text-brand-emerald dark:text-brand-gold">{t.prayerTimes}</h2>
                   <button 
                     onClick={() => setActiveTab('qibla')}
-                    className="p-3 bg-brand-emerald/10 text-brand-emerald rounded-2xl hover:bg-brand-emerald hover:text-white transition-all shadow-sm"
+                    className="p-3 bg-brand-emerald/10 dark:bg-brand-emerald/20 text-brand-emerald dark:text-brand-emerald rounded-2xl hover:bg-brand-emerald hover:text-white transition-all shadow-sm"
                     title={t.qibla}
                   >
                     <Compass size={20} />
                   </button>
                 </div>
-                <div className="flex items-center gap-2 text-slate-400 font-bold text-xs bg-slate-50 px-4 py-2 rounded-full w-fit">
+                <div className="flex items-center gap-2 text-slate-400 dark:text-slate-500 font-bold text-xs bg-slate-50 dark:bg-slate-800/50 px-4 py-2 rounded-full w-fit">
                   <MapPin size={12} className="text-brand-emerald" />
                   <span>{cityName}, {countryName}</span>
                 </div>
               </div>
               
               <div className="flex flex-col items-end gap-2">
-                <div className="flex items-center gap-3 bg-brand-gold/5 px-4 py-2 rounded-2xl border border-brand-gold/10">
+                <div className="flex items-center gap-3 bg-brand-gold/5 dark:bg-brand-gold/10 px-4 py-2 rounded-2xl border border-brand-gold/10 dark:border-brand-gold/20">
                   <Calendar size={16} className="text-brand-gold" />
                   <div className="text-right">
                     <p className="text-[10px] font-black text-brand-gold uppercase tracking-widest">{t.hijri}</p>
-                    <p className="text-sm font-bold text-slate-700">{hijriDate}</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{hijriDate}</p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3 bg-slate-50 px-4 py-2 rounded-2xl">
-                  <Clock size={16} className="text-slate-400" />
+                <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-800/80 px-4 py-2 rounded-2xl">
+                  <Clock size={16} className="text-slate-400 dark:text-slate-500" />
                   <div className="text-right">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{t.solar}</p>
-                    <p className="text-sm font-bold text-slate-700">{solarDate}</p>
+                    <p className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest">{t.solar}</p>
+                    <p className="text-sm font-bold text-slate-700 dark:text-slate-300">{solarDate}</p>
                   </div>
                 </div>
               </div>
@@ -206,12 +206,12 @@ export function PrayerTimes({ language, t }: PrayerTimesProps) {
                    <motion.div
                      key={p.id}
                      whileHover={{ scale: 1.02 }}
-                     className={`p-6 rounded-3xl border-2 transition-all text-center ${isNext ? 'bg-brand-emerald border-brand-emerald text-white shadow-xl shadow-brand-emerald/20' : 'bg-slate-50 border-slate-100 text-slate-600'}`}
+                     className={`p-6 rounded-3xl border-2 transition-all text-center ${isNext ? 'bg-brand-emerald border-brand-emerald text-white shadow-xl shadow-brand-emerald/20' : 'bg-slate-50 dark:bg-slate-800/50 border-slate-100 dark:border-slate-800 text-slate-600 dark:text-slate-300'}`}
                    >
-                     <span className={`text-[10px] font-black uppercase tracking-widest block mb-2 ${isNext ? 'text-white/60' : 'text-slate-400'}`}>
+                     <span className={`text-[10px] font-black uppercase tracking-widest block mb-2 ${isNext ? 'text-white/60' : 'text-slate-400 dark:text-slate-500'}`}>
                        {p.name}
                      </span>
-                     <span className="text-xl font-black tracking-tight">
+                     <span className="text-xl font-black tracking-tight dark:text-white">
                        {formatTime(p.time)}
                      </span>
                      {isNext && (
@@ -240,7 +240,7 @@ export function PrayerTimes({ language, t }: PrayerTimesProps) {
             </button>
             <h2 className="text-2xl font-black text-slate-800">{t.qibla}</h2>
           </div>
-          <div className="bg-white p-4 rounded-[3rem] shadow-sm border border-slate-100">
+          <div className="bg-white dark:bg-slate-900 p-4 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800">
             <QiblaFinder language={language} t={t} />
           </div>
         </motion.div>

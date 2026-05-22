@@ -1,6 +1,8 @@
 @import url('https://fonts.googleapis.com/css2?family=Vazirmatn:wght@100..900&family=Noto+Naskh+Arabic:wght@400..700&family=Amiri:wght@400;700&display=swap');
 @import "tailwindcss";
 
+@variant dark (&:where(.dark, .dark *));
+
 @theme {
   --font-kurdish: "Vazirmatn", "Noto Naskh Arabic", sans-serif;
   --font-quran: "Amiri", "Noto Naskh Arabic", serif;
@@ -25,4 +27,17 @@
 
 .text-kurdish-display {
   font-family: "Vazirmatn", sans-serif;
+}
+
+@keyframes marquee {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(0); }
+}
+
+.animate-marquee-rtl {
+  animation: marquee 300s linear infinite;
+}
+
+.pause-on-hover:hover {
+  animation-play-state: paused;
 }

@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
-import { Sun, Moon, Sunrise, Stars, Clock, MessageSquare, Menu, X, User, Home, BookOpen, Quote, ChevronLeft, ChevronRight, Heart, Map, Plane, Compass, Languages, Loader2, MapPin, Shirt, Library, Filter, Search, Zap, Wallet, BarChart, ShieldCheck, Lock, Globe, Grid2X2, Droplets, Utensils, CloudRain, Smile, Frown, ShoppingBag, Users, Coffee, Bell, Trash2, Ghost, Trophy, Send, QrCode } from 'lucide-react';
+import { Sun, Moon, Sunrise, Stars, Clock, MessageSquare, Menu, X, User, Home, BookOpen, Quote, ChevronLeft, ChevronRight, Heart, Map, Plane, Compass, Languages, Loader2, MapPin, Shirt, Library, Filter, Search, Zap, BarChart, ShieldCheck, Lock, Globe, Grid2X2, Droplets, Utensils, CloudRain, Smile, Frown, ShoppingBag, Users, Coffee, Bell, Trash2, Ghost, Trophy, Send, QrCode } from 'lucide-react';
 import { zikrs, Zikr } from './data/zikrs';
 import { hadiths } from './data/hadiths';
 import { namesOfAllah } from './data/namesOfAllah';
@@ -21,7 +21,6 @@ import { translations } from './data/translations';
 import { surahs, sampleAyahs, Surah, Ayah } from './data/quran';
 import { ZikrMarquee } from './components/ZikrMarquee';
 import { ZikrCard } from './components/ZikrCard';
-import { ZakatCalculator } from './components/ZakatCalculator';
 import { Stories } from './components/Stories';
 import { DailyCard } from './components/DailyCard';
 import { youthGuidance } from './data/youthGuidance';
@@ -35,7 +34,7 @@ import { AdminPortal } from './components/AdminPortal';
 import { Stats } from './components/Stats';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
-type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'zakat' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara';
+type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara';
 type Language = 'ku' | 'en' | 'ar';
 type TafsirType = 'asan' | 'ibnkathir' | 'tabari' | 'zamakhshari';
 type HajjType = 'hajj' | 'umrah';
@@ -179,11 +178,6 @@ export default function App() {
   const [feedbackMessage, setFeedbackMessage] = useState('');
   const [isSendingFeedback, setIsSendingFeedback] = useState(false);
   const [feedbackSent, setFeedbackSent] = useState(false);
-  
-  const [withdrawalMethod, setWithdrawalMethod] = useState<'fib' | 'fastpay' | 'qi' | ''>('');
-  const [withdrawalAccount, setWithdrawalAccount] = useState('');
-  const [isWithdrawing, setIsWithdrawing] = useState(false);
-  const [withdrawSuccess, setWithdrawSuccess] = useState(false);
   
   useEffect(() => {
     const unsub = onAuthStateChanged(auth, async (u) => {
@@ -704,13 +698,6 @@ export default function App() {
             />
 
             <SidebarLink 
-              icon={<Wallet size={20} className="text-amber-500" />} 
-              label={t.zakat} 
-              active={currentView === 'zakat'} 
-              onClick={() => { setCurrentView('zakat'); setIsSidebarOpen(false); }} 
-            />
-
-            <SidebarLink 
               icon={<Library size={20} className="text-brand-emerald" />} 
               label={t.stories} 
               active={currentView === 'stories'} 
@@ -860,7 +847,7 @@ export default function App() {
           <div className="flex-1 flex justify-center items-center gap-4">
             <h1 
               onClick={() => setCurrentView('home')}
-              className="text-2xl font-black text-brand-emerald tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
+              className="text-2xl font-black text-brand-emerald dark:text-brand-gold tracking-tight cursor-pointer hover:opacity-80 transition-opacity"
             >
               {t.appName}
             </h1>
@@ -874,7 +861,7 @@ export default function App() {
             
             <div className="flex-1 max-w-xs relative group hidden md:block lg:ml-4">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="text-slate-300 group-focus-within:text-brand-emerald transition-colors" size={14} />
+                <Search className="text-slate-300 group-focus-within:text-brand-emerald dark:group-focus-within:text-brand-gold transition-colors" size={14} />
               </div>
               <input 
                 type="text"
@@ -884,7 +871,7 @@ export default function App() {
                   if (currentView !== 'zikrs' && currentView !== 'home') setCurrentView('zikrs');
                 }}
                 placeholder={t.searchAdhkar}
-                className="w-full bg-slate-50 border border-slate-100 rounded-full py-2 pl-9 pr-4 text-xs font-bold outline-none focus:bg-white focus:ring-2 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 transition-all"
+                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-full py-2 pl-9 pr-4 text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 transition-all dark:text-white"
               />
             </div>
           </div>
@@ -904,9 +891,7 @@ export default function App() {
                 <div className="space-y-4">
                   <h2 className="text-3xl font-black text-slate-800 dark:text-white">{t.appName}</h2>
                   <p className="text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
-                    {language === 'ku' ? 'ئەم ئەپڵیکەیشنە پەرەپێدراوە بۆ خزمەتکردنی موسڵمانان لە تەواوی جیهان، بە مەبەستی ئاسانکاری بۆ زیکرکردن، خوێندنەوەی قورئان و تێگەیشتن لە فەرموودەکان. هەموو زانیارییەکان لە سەرچاوە باوەڕپێکراوەکانەوە وەرگیراون.' : 
-                     language === 'ar' ? 'تم تطوير هذا التطبيق لخدمة المسلمين في جميع أنحاء العالم، بهدف تسهيل الأذكار وقراءة القرآن وفهم الأحاديث النبوية. جميع المعلومات مأخوذة من مصادر موثوقة.' :
-                     'This application was developed to serve Muslims worldwide, aiming to facilitate Dhikr, Quran reading, and understanding of Hadiths. All information is sourced from reliable authorities.'}
+                    {t.aboutDescription}
                   </p>
                 </div>
 
@@ -1071,7 +1056,7 @@ export default function App() {
           {currentView === 'youth' && (
              <motion.div key="youth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                 <div className="text-center space-y-4 mb-8">
-                  <h2 className="text-3xl font-black text-brand-emerald">{t.youthGuidance || 'Youth Guidance'}</h2>
+                  <h2 className="text-3xl font-black text-brand-emerald dark:text-emerald-400">{t.youthGuidance || 'Youth Guidance'}</h2>
                   <p className="text-slate-400 font-bold max-w-md mx-auto">
                     {language === 'en' ? 'Practical advice for young Muslims on habits, faith, and daily life.' : 'ئامۆژگاری و ڕێنمایی بۆ گەنجان دەربارەی ژیان و ئایین.'}
                   </p>
@@ -1105,12 +1090,6 @@ export default function App() {
              </motion.div>
           )}
 
-          {currentView === 'zakat' && (
-            <motion.div key="zakat" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <ZakatCalculator language={language} t={t} />
-            </motion.div>
-          )}
-
           {currentView === 'stories' && (
             <motion.div key="stories" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <Stories language={language} t={t} />
@@ -1128,7 +1107,7 @@ export default function App() {
               {!selectedSurah ? (
                 <>
                   <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-xl text-center border border-slate-100 dark:border-slate-800">
-                    <h2 className="text-3xl font-black text-brand-emerald mb-6">{t.quran}</h2>
+                    <h2 className="text-3xl font-black text-brand-emerald dark:text-brand-gold mb-6">{t.quran}</h2>
                     <div className="relative max-w-md mx-auto">
                       <input 
                         type="text" 
@@ -1137,7 +1116,7 @@ export default function App() {
                         onChange={(e) => setQuranSearch(e.target.value)}
                         className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 rounded-2xl border-none focus:ring-2 focus:ring-brand-emerald/20 transition-all font-bold dark:text-white"
                       />
-                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-emerald/40" size={20} />
+                      <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-brand-emerald/40 dark:text-brand-gold/40" size={20} />
                     </div>
                     
                     {isFetchingAyahs && (
@@ -1218,7 +1197,7 @@ export default function App() {
           {currentView === 'post-of-day' && (
             <motion.div key="post-of-day" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }}>
               <div className="py-10 text-center space-y-4">
-                <h2 className="text-3xl font-black text-brand-emerald">{t.postOfDay}</h2>
+                <h2 className="text-3xl font-black text-brand-emerald dark:text-brand-gold">{t.postOfDay}</h2>
                 <p className="text-slate-500 font-bold">بۆ بڵاوکردنەوەی زیکرەکان وەک ستۆری بە دیزاینێکی نایاب</p>
               </div>
               <DailyCard language={language} t={t} />
@@ -1314,7 +1293,7 @@ export default function App() {
               <div className="max-w-3xl mx-auto space-y-8 px-4">
                 {/* Definition */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800 space-y-4">
-                  <h3 className="text-xl font-black text-brand-emerald flex items-center gap-2">
+                  <h3 className="text-xl font-black text-brand-emerald dark:text-emerald-400 flex items-center gap-2">
                     <Library size={20} />
                     {language === 'en' ? 'Definition' : language === 'ar' ? 'التعريف' : 'پێناسە'}
                   </h3>
@@ -1391,7 +1370,7 @@ export default function App() {
             <motion.div key="home" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-12 py-10">
               {/* Simplified Header with Time Label */}
               <div className="text-center space-y-4">
-                <div className="inline-flex items-center gap-2 px-6 py-2 bg-brand-emerald/10 text-brand-emerald rounded-full">
+                <div className="inline-flex items-center gap-2 px-6 py-2 bg-brand-emerald/10 dark:bg-brand-emerald/20 text-brand-emerald dark:text-white rounded-full">
                   <Clock size={16} />
                   <span className="text-sm font-black uppercase tracking-widest leading-none">
                     {(() => {
@@ -1473,7 +1452,6 @@ export default function App() {
                       { id: 'marriage', label: t.marriageHub, icon: <Heart className="text-rose-500" /> },
                       { id: 'tasbih', label: t.tasbih, icon: <Zap className="text-brand-gold" /> },
                       { id: 'hajj', label: t.hajj, icon: <Compass className="text-indigo-500" /> },
-                      { id: 'zakat', label: t.zakat, icon: <Wallet className="text-amber-500" /> },
                       { id: 'stories', label: t.stories, icon: <Library className="text-brand-emerald" /> },
                       { id: 'chat', label: t.aiChat || 'AI Chat', icon: <MessageSquare className="text-brand-emerald" /> },
                       { id: 'progress', label: t.progress || 'Progress', icon: <BarChart className="text-indigo-400" /> },
@@ -1506,9 +1484,9 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="space-y-6"
             >
-              <div className="bg-white p-6 rounded-[2.5rem] shadow-sm border border-slate-100 flex flex-col gap-6">
+              <div className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col gap-6">
                 <div className="flex items-center justify-between">
-                  <h2 className="text-2xl font-black text-brand-emerald">
+                  <h2 className="text-2xl font-black text-brand-emerald dark:text-brand-gold">
                     {activeCategory === 'all' ? t.zikrs : 
                      categories.find(c => c.id === activeCategory)?.label}
                   </h2>
@@ -1516,14 +1494,14 @@ export default function App() {
 
                 <div className="relative group">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Search className="text-slate-400 group-focus-within:text-brand-emerald transition-colors" size={18} />
+                    <Search className="text-slate-400 group-focus-within:text-brand-emerald dark:group-focus-within:text-brand-gold transition-colors" size={18} />
                   </div>
                   <input 
                     type="text"
                     value={adhkarSearchQuery}
                     onChange={(e) => setAdhkarSearchQuery(e.target.value)}
                     placeholder={t.searchAdhkar}
-                    className="w-full pl-12 pr-6 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 outline-none transition-all shadow-inner"
+                    className="w-full pl-12 pr-6 py-4 bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-2xl text-sm font-bold focus:ring-4 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 outline-none transition-all shadow-inner dark:text-white"
                   />
                 </div>
                 
@@ -1531,11 +1509,11 @@ export default function App() {
                   <div className="relative">
                     <button 
                       onClick={() => setIsAdhkarDropdownOpen(!isAdhkarDropdownOpen)}
-                      className="w-full flex items-center justify-between gap-3 px-6 py-4 rounded-2xl font-black text-sm transition-all border bg-white border-slate-100 text-brand-emerald shadow-sm hover:border-brand-emerald/30"
+                      className="w-full flex items-center justify-between gap-3 px-6 py-4 rounded-2xl font-black text-sm transition-all border bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-brand-emerald dark:text-brand-gold shadow-sm hover:border-brand-emerald/30"
                     >
                       <div className="flex items-center gap-3">
-                        <Menu size={20} className="text-brand-emerald" />
-                        <span>{t.zikrs}</span>
+                        <Menu size={20} className="text-brand-emerald dark:text-brand-gold" />
+                        <span className="dark:text-brand-gold">{t.zikrs}</span>
                       </div>
                       <div className="px-3 py-1 bg-brand-emerald/10 rounded-lg text-[10px] uppercase tracking-widest font-black">
                         {activeCategory === 'all' ? t.all : categories.find(c => c.id === activeCategory)?.label}
@@ -1553,25 +1531,25 @@ export default function App() {
                         >
                           <button
                             onClick={() => { setActiveCategory('all'); setIsAdhkarDropdownOpen(false); }}
-                            className={`w-full flex items-center justify-between px-6 py-4 text-[12px] font-bold transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${activeCategory === 'all' ? 'text-brand-emerald bg-brand-emerald/5' : 'text-slate-500'}`}
+                            className={`w-full flex items-center justify-between px-6 py-4 text-[12px] font-bold transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${activeCategory === 'all' ? 'text-brand-emerald bg-brand-emerald/5 dark:text-brand-gold' : 'text-slate-500'}`}
                           >
                             <div className="flex items-center gap-3">
-                              <Grid2X2 size={16} className={activeCategory === 'all' ? 'text-brand-emerald' : 'text-slate-300'} />
+                              <Grid2X2 size={16} className={activeCategory === 'all' ? 'text-brand-emerald dark:text-brand-gold' : 'text-slate-300'} />
                               <span>{t.all}</span>
                             </div>
-                            {activeCategory === 'all' && <div className="w-2 h-2 rounded-full bg-brand-emerald shadow-sm shadow-brand-emerald/20"></div>}
+                            {activeCategory === 'all' && <div className="w-2 h-2 rounded-full bg-brand-emerald dark:bg-brand-gold shadow-sm shadow-brand-emerald/20"></div>}
                           </button>
                           {categories.map(c => (
                             <button
                               key={c.id}
                               onClick={() => { setActiveCategory(c.id as any); setIsAdhkarDropdownOpen(false); }}
-                              className={`w-full flex items-center justify-between px-6 py-4 text-[12px] font-bold transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${activeCategory === c.id ? 'text-brand-emerald bg-brand-emerald/5' : 'text-slate-500'}`}
+                              className={`w-full flex items-center justify-between px-6 py-4 text-[12px] font-bold transition-all hover:bg-slate-50 dark:hover:bg-slate-800/50 ${activeCategory === c.id ? 'text-brand-emerald bg-brand-emerald/5 dark:text-brand-gold' : 'text-slate-500'}`}
                             >
                               <div className="flex items-center gap-3">
-                                <span className={activeCategory === c.id ? 'text-brand-emerald' : 'text-slate-300'}>{c.icon}</span>
+                                <span className={activeCategory === c.id ? 'text-brand-emerald dark:text-brand-gold' : 'text-slate-300'}>{c.icon}</span>
                                 <span>{c.label}</span>
                               </div>
-                              {activeCategory === c.id && <div className="w-2 h-2 rounded-full bg-brand-emerald shadow-sm shadow-brand-emerald/20"></div>}
+                              {activeCategory === c.id && <div className="w-2 h-2 rounded-full bg-brand-emerald dark:bg-brand-gold shadow-sm shadow-brand-emerald/20"></div>}
                             </button>
                           ))}
                         </motion.div>
@@ -1587,8 +1565,8 @@ export default function App() {
                     key={zikr.id} 
                     zikr={zikr} 
                     language={language} 
-                    onIncrement={() => addPoints(1)}
-                    onComplete={() => completeZikr(zikr.text, zikr.pointsPerComplete || 5)}
+                    onIncrement={(title) => incrementTasbih(1, title)}
+                    onComplete={(title) => completeZikr(title, zikr.pointsPerComplete || 5)}
                   />
                 ))}
               </div>
@@ -1637,19 +1615,19 @@ export default function App() {
               className="space-y-8 pb-32"
             >
               <div className="text-center space-y-4 mb-8">
-                <h2 className="text-3xl font-black text-brand-emerald">{t.hadith}</h2>
+                <h2 className="text-3xl font-black text-brand-emerald dark:text-brand-gold">{t.hadith}</h2>
                 <div className="w-16 h-1 bg-brand-emerald/20 mx-auto rounded-full"></div>
                 <div className="max-w-xl mx-auto px-4 mt-8">
                   <div className="relative">
                     <button 
                       onClick={() => setIsHadithDropdownOpen(!isHadithDropdownOpen)}
-                      className="w-full flex items-center justify-between gap-3 px-6 py-4 rounded-2xl font-black text-sm transition-all border bg-white border-slate-100 text-brand-emerald shadow-sm hover:border-brand-emerald/30"
+                      className="w-full flex items-center justify-between gap-3 px-6 py-4 rounded-2xl font-black text-sm transition-all border bg-white dark:bg-slate-900 border-slate-100 dark:border-slate-800 text-brand-emerald dark:text-brand-gold shadow-sm hover:border-brand-emerald/30"
                     >
                       <div className="flex items-center gap-3">
                         <Menu size={20} className="text-brand-emerald" />
                         <span>{t.hadith}</span>
                       </div>
-                      <div className="px-3 py-1 bg-brand-emerald/10 rounded-lg text-[10px] uppercase tracking-widest font-black">
+                      <div className="px-3 py-1 bg-brand-emerald/10 dark:bg-brand-emerald/20 rounded-lg text-[10px] uppercase tracking-widest font-black">
                         {selectedHadithCollection === 'Bukhari' ? (language === 'ku' ? 'بوخاری' : 'Bukhari') : 
                          selectedHadithCollection === 'Muslim' ? (language === 'ku' ? 'موسلیم' : 'Muslim') :
                          selectedHadithCollection === 'Sahih Ibn Khuzaymah' ? (language === 'ku' ? 'ئیبن خوزەیمە' : 'Ibn Khuzaymah') :
@@ -1812,7 +1790,7 @@ export default function App() {
                   <button 
                     key={item.id}
                     onClick={item.action}
-                    className="p-8 bg-white border border-slate-100 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all flex flex-col items-center gap-6 group text-center"
+                    className="p-8 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm hover:shadow-xl transition-all flex flex-col items-center gap-6 group text-center"
                   >
                     <div className={`w-20 h-20 ${item.color} rounded-3xl flex items-center justify-center group-hover:scale-110 transition-transform shadow-inner`}>
                       {item.icon}
@@ -1832,7 +1810,7 @@ export default function App() {
               <div className="flex items-center gap-4 mb-8">
                 <button 
                   onClick={() => setActiveHajjSubView('menu')}
-                  className="p-4 bg-white border border-slate-100 rounded-2xl text-slate-400 hover:text-brand-emerald transition-colors shadow-sm"
+                  className="p-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-2xl text-slate-400 dark:text-slate-500 hover:text-brand-emerald transition-colors shadow-sm"
                 >
                   <ChevronLeft size={24} />
                 </button>
@@ -1851,12 +1829,12 @@ export default function App() {
                 {activeHajjSubView === 'miqats' && (
                   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
                     {/* Clothing Section */}
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-3 mb-6">
-                        <div className="w-10 h-10 bg-brand-emerald/10 rounded-xl flex items-center justify-center text-brand-emerald">
+                        <div className="w-10 h-10 bg-brand-emerald/10 dark:bg-brand-emerald/20 rounded-xl flex items-center justify-center text-brand-emerald dark:text-brand-emerald">
                           <Shirt size={20} />
                         </div>
-                        <h3 className="text-xl font-black text-slate-800">{t.ihram} {t.guide}</h3>
+                        <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">{t.ihram} {t.guide}</h3>
                       </div>
 
                                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1923,14 +1901,14 @@ export default function App() {
                     </div>
 
                     {/* Miqat Selector Section */}
-                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                    <div className="bg-white dark:bg-slate-900 p-8 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800">
                       <div className="flex items-center gap-3 mb-4">
-                        <div className="w-10 h-10 bg-brand-emerald/10 rounded-xl flex items-center justify-center text-brand-emerald">
+                        <div className="w-10 h-10 bg-brand-emerald/10 dark:bg-brand-emerald/20 rounded-xl flex items-center justify-center text-brand-emerald dark:text-brand-emerald">
                           <MapPin size={20} />
                         </div>
-                        <h3 className="text-xl font-black text-slate-800">{t.miqats}</h3>
+                        <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">{t.miqats}</h3>
                       </div>
-                      <p className="text-sm text-slate-500 mb-6 font-medium">{t.miqatDescription}</p>
+                      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6 font-medium">{t.miqatDescription}</p>
 
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8">
                         {miqatsData.map(miqat => (
@@ -2092,7 +2070,7 @@ export default function App() {
                           <div className="pt-4 border-t border-slate-50">
                             <div className="flex items-center gap-2 mb-2">
                               <span className="w-5 h-5 rounded-full bg-brand-emerald/10 text-brand-emerald text-[8px] font-black flex items-center justify-center">✓</span>
-                              <h3 className="text-[10px] font-black text-brand-emerald uppercase tracking-widest">{t.correction}</h3>
+                              <h3 className="text-[10px] font-black text-brand-emerald dark:text-emerald-400 uppercase tracking-widest">{t.correction}</h3>
                             </div>
                             <p className="text-sm font-medium text-slate-600 leading-relaxed text-kurdish-display">
                               {language === 'en' ? m.correction.en : language === 'ku' ? m.correction.ku : m.correction.ar}
@@ -2450,7 +2428,7 @@ export default function App() {
           {currentView === 'marriage' && activeMarriageSubView === 'menu' && (
             <motion.div key="marriage-menu" initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="space-y-8">
               <div className="text-center space-y-2 mb-12">
-                <h2 className="text-4xl font-black text-brand-emerald text-kurdish-display">{t.marriage}</h2>
+                <h2 className="text-4xl font-black text-brand-emerald dark:text-brand-gold text-kurdish-display">{t.marriage}</h2>
                 <p className="text-slate-400 font-bold uppercase tracking-[0.3em] text-[10px]">{t.guide} & {t.rights}</p>
               </div>
 
@@ -2495,7 +2473,7 @@ export default function App() {
                 >
                   <ChevronLeft size={24} />
                 </button>
-                <h2 className="text-2xl font-black text-brand-emerald text-kurdish-display">
+                <h2 className="text-2xl font-black text-brand-emerald dark:text-emerald-400 text-kurdish-display">
                   {activeMarriageSubView === 'love' ? t.love : (selectedMarriageCategory === 'all' ? t.marriage : ((t as any)[selectedMarriageCategory] || intimacyGuideData[0].title[language]))}
                 </h2>
               </div>
@@ -2744,7 +2722,7 @@ export default function App() {
           </div>
           
           <div className="space-y-4">
-            <p className="text-2xl md:text-3xl font-black text-brand-emerald font-kufi" dir="rtl">
+            <p className="text-2xl md:text-3xl font-black text-brand-emerald dark:text-brand-gold font-kufi" dir="rtl">
               {t.ibrahimVerse}
             </p>
             <p className="text-sm md:text-base font-bold text-slate-500 dark:text-slate-400 font-kurdish leading-relaxed max-w-xl mx-auto px-6">
@@ -2759,7 +2737,7 @@ export default function App() {
           
           <div className="pt-8 text-[10px] font-black text-slate-300 dark:text-slate-700 uppercase tracking-widest flex items-center justify-center gap-4">
             <div className="w-2 h-2 rounded-full bg-brand-emerald/20"></div>
-            © {new Date().getFullYear()} Zikrakan • Built for the Ummah
+            {t.footerBranding}
             <div className="w-2 h-2 rounded-full bg-brand-emerald/20"></div>
           </div>
         </div>
@@ -2800,11 +2778,11 @@ function SidebarLink({ icon, label, active, onClick }: SidebarLinkProps) {
       className={`w-full flex items-center justify-between px-4 py-3.5 rounded-2xl transition-all ${
         active 
           ? 'bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20' 
-          : 'text-slate-500 hover:bg-slate-50'
+          : 'text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800'
       }`}
     >
       <div className="flex items-center gap-3">
-        <span className={active ? 'text-brand-gold' : 'text-brand-emerald opacity-60'}>{icon}</span>
+        <span className={active ? 'text-brand-gold' : 'text-brand-emerald dark:text-brand-gold opacity-60 dark:opacity-80'}>{icon}</span>
         <span className="font-bold text-sm tracking-tight">{label}</span>
       </div>
       {active && <ChevronLeft size={16} />}

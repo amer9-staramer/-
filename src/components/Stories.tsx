@@ -29,7 +29,7 @@ export function Stories({ language, t }: StoriesProps) {
             <button
               key={cat.id}
               onClick={() => { setActiveCategory(cat.id as any); setSelectedStory(null); }}
-              className={`px-6 py-3 rounded-full text-xs font-black transition-all ${activeCategory === cat.id ? 'bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20 border-brand-emerald' : 'bg-white text-slate-400 border border-slate-100'}`}
+              className={`px-6 py-3 rounded-full text-xs font-black transition-all ${activeCategory === cat.id ? 'bg-brand-emerald text-white shadow-lg shadow-brand-emerald/20 border-brand-emerald' : 'bg-white dark:bg-slate-800 text-slate-400 dark:text-slate-500 border border-slate-100 dark:border-slate-800'}`}
             >
               {cat.label}
             </button>
