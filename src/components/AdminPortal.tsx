@@ -88,11 +88,7 @@ const getUserLevel = (u: any) => {
 
 const isUserOnline = (u: any) => {
   if (!u) return false;
-  if (u.status !== 'online') return false;
-  if (!u.lastActive) return false;
-  const lastActiveTime = new Date(u.lastActive).getTime();
-  const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-  return lastActiveTime > fiveMinutesAgo;
+  return u.status === 'online';
 };
 
 interface AdminStats {
@@ -1184,11 +1180,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
 
             const isUserOnline = (u: any) => {
               if (!u) return false;
-              if (u.status !== 'online') return false;
-              if (!u.lastActive) return false;
-              const lastActiveTime = new Date(u.lastActive).getTime();
-              const fiveMinutesAgo = Date.now() - 5 * 60 * 1000;
-              return lastActiveTime > fiveMinutesAgo;
+              return u.status === 'online';
             };
 
             const sortedUsers = [...(stats?.usersList || [])]
@@ -1301,7 +1293,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                                   <div className="truncate max-w-[150px] sm:max-w-xs text-left">
                                     <div className="flex items-center gap-2">
                                       <span className="font-bold text-slate-300 group-hover:text-white transition-colors block text-sm truncate" title={u.id}>
-                                        {u.id && u.id.length > 12 ? `Device_${u.id.substring(4, 12)}` : (u.id || 'Unknown')}
+                                        بەندەی اللە
                                       </span>
                                       {online ? (
                                         <span className="flex h-2 w-2 relative shrink-0">
@@ -1384,7 +1376,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                               : (language === 'ku' ? 'ئۆفلاینی دوور' : 'OFFLINE')}
                           </span>
                           <h4 className="font-black text-lg text-white truncate max-w-[200px]" title={selectedUser.id}>
-                            {selectedUser.id && selectedUser.id.length > 12 ? `Device_${selectedUser.id.substring(4, 12)}` : (selectedUser.id || 'Unknown')}
+                            بەندەی اللە
                           </h4>
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                             {language === 'ku' ? 'مۆبایلی تۆمارکراو بەجیا' : 'SECURE NODE ID'}

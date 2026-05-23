@@ -47,7 +47,7 @@ export function Stats({ language, t, isDeviceAdmin }: StatsProps) {
           totalZikrsCompleted += data.totalZikrsCompleted || 0;
 
           // Check if user is online in real-time
-          const isOnline = data.status === 'online' && data.lastActive && new Date(data.lastActive).getTime() > fiveMinutesAgo;
+          const isOnline = data.status === 'online';
           if (isOnline) {
             activeOnlineCount++;
           }
