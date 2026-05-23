@@ -255,7 +255,21 @@ export default function App() {
   const [feedbackSent, setFeedbackSent] = useState(false);
   
   useEffect(() => {
+    const isLocalAdmin = localStorage.getItem('isLocalAdminAuthorized') === 'true';
+    if (isLocalAdmin) {
+      setCurrentUserEmail('adolamer9@gmail.com');
+      setIsAdmin(true);
+      if (deviceId) {
+        localStorage.setItem('admin_authorized_device_id', deviceId);
+      }
+    }
+
     const unsub = onAuthStateChanged(auth, async (u) => {
+      if (localStorage.getItem('isLocalAdminAuthorized') === 'true') {
+        setCurrentUserEmail('adolamer9@gmail.com');
+        setIsAdmin(true);
+        return;
+      }
       if (u) {
         setCurrentUserEmail(u.email);
         // Full admin access for specific email OR firestore admin record
@@ -902,6 +916,25 @@ export default function App() {
     e.preventDefault();
     setIsLoggingIn(true);
     setLoginError('');
+
+    const cleanEmail = aboutEmail.trim().toLowerCase();
+    const cleanPassword = aboutPassword;
+
+    if (cleanEmail === 'adolamer9@gmail.com' && cleanPassword === 'xamnak12345XAMNAK') {
+      localStorage.setItem('isLocalAdminAuthorized', 'true');
+      if (deviceId) {
+        localStorage.setItem('admin_authorized_device_id', deviceId);
+      }
+      setCurrentUserEmail('adolamer9@gmail.com');
+      setIsAdmin(true);
+      setCurrentView('admin-portal');
+      setShowLoginForm(false);
+      setAboutEmail('');
+      setAboutPassword('');
+      setIsLoggingIn(false);
+      return;
+    }
+
     try {
       const userCredential = await signInWithEmailAndPassword(auth, aboutEmail, aboutPassword);
       if (userCredential.user.email === 'adolamer9@gmail.com') {
@@ -928,6 +961,7 @@ export default function App() {
         language={language}
         isDeviceAdmin={isDeviceAdmin}
         onBack={() => {
+          localStorage.removeItem('isLocalAdminAuthorized');
           setIsAdmin(false);
           signOut(auth);
           setCurrentView('home');
