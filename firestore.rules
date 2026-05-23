@@ -76,12 +76,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow get: if true;
-      allow list: if isSignedIn(); 
+      allow get, list: if true;
       
-      allow create: if isSignedIn() && isValidId(userId) && isValidUser(incoming());
+      allow create: if isValidId(userId) && isValidUser(incoming());
       
-      allow update: if (isSignedIn() || isAdmin()) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isValidId(userId) && isValidUser(incoming());
       
       allow delete: if false;
     }
@@ -93,19 +92,18 @@ service cloud.firestore {
     }
 
     match /hadith_counts/{sourceId} {
-      allow read: if true;
-      allow write: if isSignedIn();
+      allow read, write: if true;
     }
 
     match /hadiths/{hadithId} {
       allow read: if true;
-      allow write: if isSignedIn();
+      allow write: if true;
     }
 
     match /messages/{messageId} {
-      allow read: if isSignedIn();
+      allow read: if true;
       allow create: if isValidId(messageId) && isValidMessage(incoming()) && (incoming().timestamp == request.time);
-      allow update, delete: if isSignedIn();
+      allow update, delete: if true;
     }
 
     match /global_stats/{statId} {
