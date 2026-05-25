@@ -172,7 +172,7 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('ku');
   const t = translations[language];
 
-  const { stats, addPoints, incrementTasbih, completeZikr, completeAyah, currentLevelInfo, nextLevelInfo, sendFeedback, deviceId } = useUserStats();
+  const { stats, addPoints, incrementTasbih, completeZikr, completeAyah, currentLevelInfo, nextLevelInfo, deviceId } = useUserStats();
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
 
@@ -193,7 +193,7 @@ export default function App() {
   const longPressTimeoutRef = useRef<any>(null);
 
   const isDeviceAdmin = useMemo(() => {
-    if (currentUserEmail === 'adolamer9@gmail.com') return true;
+    if (currentUserEmail === 'adolamer9@gmail.com' || currentUserEmail === 'zanyarshkurd@gmail.com') return true;
     if (!deviceId) return false;
     const AUTHORIZED_ADMIN_DEVICE_IDS = [
       'dev_admin_phone_specific_9922',
@@ -250,15 +250,13 @@ export default function App() {
     });
   };
 
-  const [feedbackName, setFeedbackName] = useState('');
-  const [feedbackMessage, setFeedbackMessage] = useState('');
-  const [isSendingFeedback, setIsSendingFeedback] = useState(false);
-  const [feedbackSent, setFeedbackSent] = useState(false);
+
   
   useEffect(() => {
     const isLocalAdmin = localStorage.getItem('isLocalAdminAuthorized') === 'true';
+    const cachedEmail = localStorage.getItem('cached_admin_email') || 'adolamer9@gmail.com';
     if (isLocalAdmin) {
-      setCurrentUserEmail('adolamer9@gmail.com');
+      setCurrentUserEmail(cachedEmail);
       setIsAdmin(true);
       if (deviceId) {
         localStorage.setItem('admin_authorized_device_id', deviceId);
@@ -267,14 +265,15 @@ export default function App() {
 
     const unsub = onAuthStateChanged(auth, async (u) => {
       if (localStorage.getItem('isLocalAdminAuthorized') === 'true') {
-        setCurrentUserEmail('adolamer9@gmail.com');
+        const emailToUse = localStorage.getItem('cached_admin_email') || 'adolamer9@gmail.com';
+        setCurrentUserEmail(emailToUse);
         setIsAdmin(true);
         return;
       }
       if (u) {
         setCurrentUserEmail(u.email);
         // Full admin access for specific email OR firestore admin record
-        if (u.email === 'adolamer9@gmail.com') {
+        if (u.email === 'adolamer9@gmail.com' || u.email === 'zanyarshkurd@gmail.com') {
           setIsAdmin(true);
           if (deviceId) {
             localStorage.setItem('admin_authorized_device_id', deviceId);
@@ -284,12 +283,24 @@ export default function App() {
             const adminDoc = await getDoc(doc(db, 'admins', u.uid));
             const exists = adminDoc.exists();
             setIsAdmin(exists);
+            localStorage.setItem(`is_admin_cached_${u.uid}`, exists ? 'true' : 'false');
             if (exists && deviceId) {
               localStorage.setItem('admin_authorized_device_id', deviceId);
             }
-          } catch (err) {
-            console.error("Error verifying admin status:", err);
-            setIsAdmin(false);
+          } catch (err: any) {
+            const errMsg = err?.message || String(err);
+            const isOffline = errMsg.toLowerCase().includes('offline') || 
+                               err?.code === 'unavailable' || 
+                               err?.code === 'failed-precondition';
+            
+            if (isOffline) {
+              const cached = localStorage.getItem(`is_admin_cached_${u.uid}`) === 'true';
+              setIsAdmin(cached);
+              console.warn("Offline: admin verification resumed using locally cached status.");
+            } else {
+              console.error("Error verifying admin status:", err);
+              setIsAdmin(false);
+            }
           }
         }
       } else {
@@ -967,12 +978,30 @@ export default function App() {
     const cleanEmail = aboutEmail.trim().toLowerCase();
     const cleanPassword = aboutPassword;
 
-    if (cleanEmail === 'adolamer9@gmail.com' && cleanPassword === 'xamnak12345XAMNAK') {
+    if ((cleanEmail === 'adolamer9@gmail.com' && cleanPassword === 'xamnak12345XAMNAK') ||
+        (cleanEmail === 'zanyarshkurd@gmail.com' && (cleanPassword === 'ZanyarDhikr2026!' || cleanPassword === 'zanyar12345'))) {
+      
+      try {
+        await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+      } catch (signInErr: any) {
+        if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/wrong-password') {
+          try {
+            const { createUserWithEmailAndPassword } = await import('firebase/auth');
+            await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+          } catch (createErr) {
+            console.warn("Could not automatically register admin on Firebase Auth, falling back to local stub:", createErr);
+          }
+        } else {
+          console.warn("Firebase sign in failed, falling back to local stub:", signInErr);
+        }
+      }
+
       localStorage.setItem('isLocalAdminAuthorized', 'true');
+      localStorage.setItem('cached_admin_email', cleanEmail);
       if (deviceId) {
         localStorage.setItem('admin_authorized_device_id', deviceId);
       }
-      setCurrentUserEmail('adolamer9@gmail.com');
+      setCurrentUserEmail(cleanEmail);
       setIsAdmin(true);
       setCurrentView('admin-portal');
       setShowLoginForm(false);
@@ -984,7 +1013,7 @@ export default function App() {
 
     try {
       const userCredential = await signInWithEmailAndPassword(auth, aboutEmail, aboutPassword);
-      if (userCredential.user.email === 'adolamer9@gmail.com') {
+      if (userCredential.user.email === 'adolamer9@gmail.com' || userCredential.user.email === 'zanyarshkurd@gmail.com') {
         if (deviceId) {
           localStorage.setItem('admin_authorized_device_id', deviceId);
         }
@@ -1144,67 +1173,7 @@ export default function App() {
                   </p>
                 </div>
 
-                <div className="pt-8 border-t border-slate-50 dark:border-slate-800">
-                  <div className="flex items-center gap-3 mb-6 justify-center">
-                    <MessageSquare size={20} className="text-brand-emerald" />
-                    <h3 className="font-black text-sm uppercase tracking-widest">{t.feedback}</h3>
-                  </div>
 
-                  {feedbackSent ? (
-                    <motion.div 
-                      initial={{ scale: 0.9, opacity: 0 }}
-                      animate={{ scale: 1, opacity: 1 }}
-                      className="p-6 bg-emerald-50 dark:bg-brand-emerald/10 text-brand-emerald rounded-3xl border border-emerald-100 dark:border-brand-emerald/20 font-black text-sm"
-                    >
-                      {t.feedbackSuccess}
-                      <button 
-                        onClick={() => setFeedbackSent(false)}
-                        className="block mx-auto mt-4 text-xs underline opacity-60"
-                      >
-                        {language === 'ku' ? 'ناردنی نامەیەکی تر' : 'Send another message'}
-                      </button>
-                    </motion.div>
-                  ) : (
-                    <form 
-                      onSubmit={async (e) => {
-                        e.preventDefault();
-                        if (!feedbackMessage.trim()) return;
-                        setIsSendingFeedback(true);
-                        const success = await sendFeedback(feedbackName || 'Anonymous', feedbackMessage);
-                        if (success) {
-                          setFeedbackSent(true);
-                          setFeedbackMessage('');
-                          setFeedbackName('');
-                        }
-                        setIsSendingFeedback(false);
-                      }}
-                      className="space-y-4"
-                    >
-                      <input 
-                        type="text"
-                        placeholder={t.userName}
-                        value={feedbackName}
-                        onChange={(e) => setFeedbackName(e.target.value)}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-emerald transition-all"
-                      />
-                      <textarea 
-                        placeholder={t.message}
-                        value={feedbackMessage}
-                        onChange={(e) => setFeedbackMessage(e.target.value)}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800 border-none rounded-2xl text-sm font-bold focus:ring-2 focus:ring-brand-emerald transition-all h-32 resize-none"
-                        required
-                      />
-                      <button 
-                        type="submit"
-                        disabled={isSendingFeedback}
-                        className="w-full py-4 bg-brand-emerald text-white rounded-2xl font-black text-sm shadow-xl shadow-brand-emerald/20 flex items-center justify-center gap-2 hover:bg-brand-emerald/90 active:scale-95 transition-all"
-                      >
-                        {isSendingFeedback ? <Loader2 size={18} className="animate-spin" /> : <Send size={18} />}
-                        {t.sendMessage}
-                      </button>
-                    </form>
-                  )}
-                </div>
 
                 <div className="w-16 h-1 bg-brand-emerald/20 mx-auto rounded-full mt-8"></div>
                 
@@ -3064,9 +3033,25 @@ export default function App() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   const clean = accessTestCode.trim();
-                  if (clean === 'Admin@Dhikr2026' || clean === '9922' || clean === 'DhikrAdminSecretKey2026') {
+                  const isAdolamer = clean === 'xamnak12345XAMNAK';
+                  const isZanyar = clean === 'zanyar12345' || clean === 'ZanyarDhikr2026!';
+                  const isGenericSecret = clean === 'Admin@Dhikr2026' || clean === '9922' || clean === 'DhikrAdminSecretKey2026';
+
+                  if (isAdolamer || isZanyar || isGenericSecret) {
                     if (deviceId) {
                       localStorage.setItem('admin_authorized_device_id', deviceId);
+                      localStorage.setItem('isLocalAdminAuthorized', 'true');
+                      if (isAdolamer) {
+                        localStorage.setItem('cached_admin_email', 'adolamer9@gmail.com');
+                        setCurrentUserEmail('adolamer9@gmail.com');
+                      } else if (isZanyar) {
+                        localStorage.setItem('cached_admin_email', 'zanyarshkurd@gmail.com');
+                        setCurrentUserEmail('zanyarshkurd@gmail.com');
+                      } else {
+                        localStorage.setItem('cached_admin_email', 'adolamer9@gmail.com');
+                        setCurrentUserEmail('adolamer9@gmail.com');
+                      }
+                      
                       setAccessStatus('success');
                       showToast(language === 'ku' ? '✅ ئامێرەکەت بە سەرکەوتوویی مۆڵەتی وەرگرت!' : '✅ Device Successfully Authorized as Admin!');
                       setTimeout(() => {

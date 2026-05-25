@@ -98,7 +98,6 @@ interface AdminStats {
   usersList: any[];
   zikrStats: any[];
   hadiths: Hadith[];
-  messages: any[];
 }
 
 export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () => void, language: 'ku' | 'en' | 'ar', isDeviceAdmin?: boolean }) {
@@ -245,7 +244,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
   const [error, setError] = useState('');
   const [stats, setStats] = useState<AdminStats | null>(null);
   const [isStatsLoading, setIsStatsLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'messages' | 'zikrs' | 'settings' | 'hadiths'>('users');
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'zikrs' | 'settings' | 'hadiths'>('users');
   
   // Custom device search & sort states
   const [userSearchQuery, setUserSearchQuery] = useState('');
@@ -269,8 +268,9 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
 
   useEffect(() => {
     const isLocalAdmin = localStorage.getItem('isLocalAdminAuthorized') === 'true';
+    const cachedEmail = localStorage.getItem('cached_admin_email') || 'adolamer9@gmail.com';
     if (isLocalAdmin) {
-      setUser({ email: 'adolamer9@gmail.com', uid: 'admin_local_stub' } as any);
+      setUser({ email: cachedEmail, uid: 'admin_local_stub' } as any);
       setIsAdmin(true);
       fetchData();
       setLoading(false);
@@ -278,7 +278,8 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
 
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       if (localStorage.getItem('isLocalAdminAuthorized') === 'true') {
-        setUser({ email: 'adolamer9@gmail.com', uid: 'admin_local_stub' } as any);
+        const emailToUse = localStorage.getItem('cached_admin_email') || 'adolamer9@gmail.com';
+        setUser({ email: emailToUse, uid: 'admin_local_stub' } as any);
         setIsAdmin(true);
         fetchData();
         setLoading(false);
@@ -316,7 +317,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
       });
 
       setStats(prev => {
-        const base = prev || { zikrStats: [], hadiths: [], messages: [] };
+        const base = prev || { zikrStats: [], hadiths: [] };
         return {
           ...base,
           totalUsers: snapshot.size,
@@ -332,30 +333,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
     return () => unsubscribe();
   }, [isAdmin]);
 
-  // Real-time updates for Feedback Messages
-  useEffect(() => {
-    if (!isAdmin) return;
 
-    const q = query(collection(db, 'messages'), orderBy('timestamp', 'desc'), limit(50));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messagesList: any[] = [];
-      snapshot.forEach((doc) => {
-        messagesList.push({ id: doc.id, ...doc.data() });
-      });
-
-      setStats(prev => {
-        const base = prev || { totalUsers: 0, totalPoints: 0, totalTasbihCount: 0, usersList: [], zikrStats: [], hadiths: [] };
-        return {
-          ...base,
-          messages: messagesList
-        } as any;
-      });
-    }, (error) => {
-      console.error("Error listening to messages:", error);
-    });
-
-    return () => unsubscribe();
-  }, [isAdmin]);
 
   const checkAdmin = async (uid: string) => {
     try {
@@ -365,7 +343,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
         setLoading(false);
         return;
       }
-      if (auth.currentUser?.email === 'adolamer9@gmail.com') {
+      if (auth.currentUser?.email === 'adolamer9@gmail.com' || auth.currentUser?.email === 'zanyarshkurd@gmail.com') {
         setIsAdmin(true);
         fetchData();
         setLoading(false);
@@ -422,21 +400,13 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
         hadiths.push({ id: doc.id, ...(doc.data() as any) });
       });
 
-      // Fetch Messages
-      const msgsSnap = await getDocs(query(collection(db, 'messages'), orderBy('timestamp', 'desc'), limit(50)));
-      const messages: any[] = [];
-      msgsSnap.forEach((doc) => {
-        messages.push({ id: doc.id, ...doc.data() });
-      });
-
       setStats({
         totalUsers: usersSnap.size,
         totalPoints,
         totalTasbihCount,
         usersList,
         zikrStats,
-        hadiths,
-        messages
+        hadiths
       });
     } catch (err) {
       console.error(err);
@@ -453,9 +423,25 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
     const cleanEmail = email.trim().toLowerCase();
     const cleanPassword = password;
 
-    if (cleanEmail === 'adolamer9@gmail.com' && cleanPassword === 'xamnak12345XAMNAK') {
+    if ((cleanEmail === 'adolamer9@gmail.com' && cleanPassword === 'xamnak12345XAMNAK') ||
+        (cleanEmail === 'zanyarshkurd@gmail.com' && (cleanPassword === 'ZanyarDhikr2026!' || cleanPassword === 'zanyar12345'))) {
+      
+      try {
+        await signInWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+      } catch (signInErr: any) {
+        if (signInErr.code === 'auth/user-not-found' || signInErr.code === 'auth/invalid-credential' || signInErr.code === 'auth/wrong-password') {
+          try {
+            const { createUserWithEmailAndPassword } = await import('firebase/auth');
+            await createUserWithEmailAndPassword(auth, cleanEmail, cleanPassword);
+          } catch (createErr) {
+            console.warn("Could not automatically register admin on Firebase Auth:", createErr);
+          }
+        }
+      }
+
       localStorage.setItem('isLocalAdminAuthorized', 'true');
-      setUser({ email: 'adolamer9@gmail.com', uid: 'admin_local_stub' } as any);
+      localStorage.setItem('cached_admin_email', cleanEmail);
+      setUser({ email: cleanEmail, uid: auth.currentUser?.uid || 'admin_local_stub' } as any);
       setIsAdmin(true);
       fetchData();
       setLoading(false);
@@ -732,7 +718,6 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
           <NavButton active={activeTab === 'overview'} onClick={() => setActiveTab('overview')} icon={<BarChart3 size={22} />} label={t.overview} />
           <NavButton active={activeTab === 'hadiths'} onClick={() => setActiveTab('hadiths')} icon={<Zap size={22} />} label={t.hadiths} />
           <NavButton active={activeTab === 'users'} onClick={() => { setActiveTab('users'); setSelectedUser(null); }} icon={<Smartphone size={22} />} label={language === 'ku' ? 'مۆبایلەکان' : language === 'ar' ? 'الأجهزة النشطة' : 'Mobile Devices'} />
-          <NavButton active={activeTab === 'messages'} onClick={() => setActiveTab('messages')} icon={<MessageSquare size={22} />} label={language === 'ku' ? 'نامەکان' : language === 'ar' ? 'الرسائل والملاحظات' : 'Messages'} />
           <NavButton active={activeTab === 'zikrs'} onClick={() => setActiveTab('zikrs')} icon={<TrendingUp size={22} />} label={t.analytics} />
           <NavButton active={activeTab === 'settings'} onClick={() => setActiveTab('settings')} icon={<SettingsIcon size={22} />} label={t.settings} />
         </nav>
@@ -945,54 +930,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
             </motion.div>
           )}
 
-          {activeTab === 'messages' && (
-             <motion.div 
-               key="messages"
-               initial={{ opacity: 0, x: 20 }}
-               animate={{ opacity: 1, x: 0 }}
-               className="space-y-8"
-             >
-               <h3 className="text-2xl font-black text-white px-2">
-                 {language === 'ku' ? 'نامەکانی بەکارهێنەران' : 'User Messages'}
-               </h3>
-               <div className="grid grid-cols-1 gap-6">
-                 {stats?.messages.map((msg: any) => (
-                   <motion.div 
-                     key={msg.id} 
-                     initial={{ opacity: 0, y: 10 }}
-                     animate={{ opacity: 1, y: 0 }}
-                     className="bg-slate-900/40 backdrop-blur-md p-8 rounded-[2rem] border border-slate-800/60 shadow-xl space-y-4 hover:border-brand-emerald/30 transition-all"
-                   >
-                     <div className="flex justify-between items-start">
-                       <div className="flex items-center gap-4">
-                         <div className="w-12 h-12 bg-brand-emerald/10 text-brand-emerald rounded-2xl flex items-center justify-center">
-                           <User size={24} />
-                         </div>
-                         <div>
-                           <h4 className="font-black text-lg text-white">{msg.name}</h4>
-                           <p className="text-xs text-slate-500 font-bold tracking-tight">{msg.email}</p>
-                         </div>
-                       </div>
-                       <span className="text-[10px] text-slate-600 font-black uppercase tracking-widest bg-slate-800/50 px-3 py-1 rounded-full">
-                         {msg.timestamp?.toDate ? msg.timestamp.toDate().toLocaleString(language === 'en' ? 'en-US' : 'ar-EG') : 'Processing...'}
-                       </span>
-                     </div>
-                     <div className="bg-slate-950/50 p-6 rounded-2xl border border-slate-800/50">
-                       <p className="text-slate-300 font-medium leading-relaxed" dir={language === 'en' ? 'ltr' : 'rtl'}>
-                         {msg.message}
-                       </p>
-                     </div>
-                   </motion.div>
-                 ))}
-                 {(!stats?.messages || stats.messages.length === 0) && (
-                    <div className="text-center py-20 bg-slate-900/20 rounded-[3rem] border border-dashed border-slate-800">
-                      <MessageSquare className="mx-auto text-slate-700 mb-4" size={48} />
-                      <p className="text-slate-500 font-bold italic">No feedback messages yet.</p>
-                    </div>
-                 )}
-               </div>
-             </motion.div>
-          )}
+
 
           {activeTab === 'hadiths' && (
             <motion.div 

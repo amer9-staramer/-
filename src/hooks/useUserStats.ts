@@ -376,20 +376,85 @@ export function useUserStats() {
   };
 
   const sendFeedback = async (name: string, message: string) => {
+    const payload = {
+      userId: userId || null,
+      name: name || 'Anonymous',
+      message: message || '',
+      email: auth.currentUser?.email || 'Anonymous'
+    };
+
     try {
       await addDoc(collection(db, 'messages'), {
-        userId,
-        name,
-        message,
+        userId: payload.userId,
+        name: payload.name,
+        message: payload.message,
         timestamp: serverTimestamp(),
-        email: auth.currentUser?.email || 'Anonymous'
+        email: payload.email
       });
       return true;
-    } catch (e) {
-      console.error("Error sending feedback: ", e);
-      return false;
+    } catch (e: any) {
+      console.warn("Could not save feedback to Firestore directly, caching locally for background sync:", e);
+      try {
+        const pending = JSON.parse(localStorage.getItem('pending_feedbacks') || '[]');
+        pending.push({
+          ...payload,
+          localTimestamp: new Date().toISOString()
+        });
+        localStorage.setItem('pending_feedbacks', JSON.stringify(pending));
+        return true; // Return true because it was safely cached and will be synced as soon as connection is restored
+      } catch (storageErr) {
+        console.error("Critical: Failed to even cache feedback locally:", storageErr);
+        return false;
+      }
     }
   };
+
+  // Background sync for offline messages / feedbacks
+  useEffect(() => {
+    const syncPendingFeedbacks = async () => {
+      if (!navigator.onLine) return;
+      const pendingStr = localStorage.getItem('pending_feedbacks');
+      if (!pendingStr) return;
+      try {
+        const pending = JSON.parse(pendingStr);
+        if (!Array.isArray(pending) || pending.length === 0) return;
+        
+        console.log(`Syncing ${pending.length} pending feedback messages to Firestore...`);
+        const remaining = [];
+        
+        for (const item of pending) {
+          try {
+            await addDoc(collection(db, 'messages'), {
+              userId: item.userId || null,
+              name: item.name || 'Anonymous',
+              message: item.message || '',
+              timestamp: serverTimestamp(),
+              email: item.email || 'Anonymous'
+            });
+          } catch (writeErr) {
+            console.warn("Retrying later: failed to sync pending message:", writeErr);
+            remaining.push(item);
+          }
+        }
+        
+        if (remaining.length === 0) {
+          localStorage.removeItem('pending_feedbacks');
+        } else {
+          localStorage.setItem('pending_feedbacks', JSON.stringify(remaining));
+        }
+      } catch (err) {
+        console.warn("Error running local feedback sync:", err);
+      }
+    };
+
+    syncPendingFeedbacks();
+    window.addEventListener('online', syncPendingFeedbacks);
+    const interval = setInterval(syncPendingFeedbacks, 20000); // Check/sync every 20 seconds
+    return () => {
+      window.removeEventListener('online', syncPendingFeedbacks);
+      clearInterval(interval);
+    };
+  }, [userId]);
 
   const currentLevelInfo = LEVELS.find(l => l.level === stats.level) || LEVELS[0];
   const nextLevelInfo = LEVELS.find(l => l.level === stats.level + 1);
