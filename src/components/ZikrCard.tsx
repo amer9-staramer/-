@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'motion/react';
-import { Check, RotateCcw } from 'lucide-react';
+import { motion } from 'motion/react';
+import { RotateCcw, Share2 } from 'lucide-react';
 import { Zikr } from '../data/zikrs';
 import { translations } from '../data/translations';
 import { doc, getDoc, setDoc, updateDoc, increment as firestoreIncrement } from 'firebase/firestore';
@@ -37,8 +37,17 @@ export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardPr
             lastViewed: new Date().toISOString()
           });
         }
-      } catch (err) {
-        console.error('Error tracking zikr view:', err);
+      } catch (err: any) {
+        // Log offline or connection warnings gracefully without flooding console.error
+        const errMsg = err?.message || String(err);
+        const isOffline = errMsg.toLowerCase().includes('offline') || 
+                           err?.code === 'unavailable' || 
+                           err?.code === 'failed-precondition';
+        if (isOffline) {
+          console.warn('Zikr view tracking paused: Client is offline or database is unreachable, using local stats.');
+        } else {
+          console.warn('Could not update zikr analytics:', errMsg);
+        }
       }
     };
     trackView();
@@ -82,6 +91,23 @@ export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardPr
           : 'bg-white dark:bg-slate-900 border-transparent dark:border-slate-800 shadow-md hover:shadow-xl hover:border-brand-emerald/10'
       }`}
     >
+      {/* Share Button */}
+      <div className="absolute top-4 left-4 z-20">
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            const event = new CustomEvent('trigger-share', {
+              detail: { text: zikr.text, translation: translation || '', type: 'zikr' }
+            });
+            window.dispatchEvent(event);
+          }}
+          title={language === 'ku' ? 'شێرکردن' : language === 'ar' ? 'مشاركة' : 'Share'}
+          className="p-2.5 rounded-full border-2 bg-slate-50 dark:bg-slate-800/80 text-slate-400 hover:text-brand-emerald dark:hover:text-brand-gold hover:bg-emerald-50/50 dark:hover:bg-emerald-950/20 border-slate-100 dark:border-slate-700/50 hover:border-brand-emerald/10 transition-all active:scale-95 flex items-center justify-center shadow-sm"
+        >
+          <Share2 size={15} />
+        </button>
+      </div>
+
       <div className="flex justify-center items-center mb-6">
         <div 
           onClick={increment}

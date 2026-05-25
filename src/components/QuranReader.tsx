@@ -11,7 +11,8 @@ import {
   Minimize2,
   Play,
   Pause,
-  Languages
+  Languages,
+  Share2
 } from 'lucide-react';
 import { Surah, Ayah } from '../data/quran';
 
@@ -91,6 +92,26 @@ export function QuranReader({
                 <div className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-900 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:text-brand-emerald group-hover:border-brand-emerald/30 transition-colors">
                   {ayah.numberInSurah || index + 1}
                 </div>
+              </div>
+
+              {/* Share Verse Button */}
+              <div className="absolute -top-6 left-0">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    const transStr = typeof ayah.translation === 'string' 
+                      ? ayah.translation 
+                      : ayah.translation?.ku || ayah.translation?.en || '';
+                    const event = new CustomEvent('trigger-share', {
+                      detail: { text: ayah.text, translation: transStr, type: 'ayah' }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  title={language === 'ku' ? 'شێرکردن' : language === 'ar' ? 'مشاركة' : 'Share'}
+                  className="w-8 h-8 rounded-full bg-slate-50 dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-slate-800 border border-slate-100 dark:border-slate-800 flex items-center justify-center text-slate-400 hover:text-brand-emerald hover:border-brand-emerald/30 transition-colors shadow-sm cursor-pointer active:scale-95"
+                >
+                  <Share2 size={13} />
+                </button>
               </div>
 
               <div className="flex flex-col gap-10 text-center">

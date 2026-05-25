@@ -30,27 +30,27 @@ export function DailyCard({ language, t }: DailyCardProps) {
     hadith: hadiths[dayOfYear % hadiths.length],
   };
 
-  const handleDownload = async () => {
-    alert("This card is optimized for your screenshots! Feel free to capture it.");
+  const handleDownload = () => {
+    handleShare();
   };
 
-  const handleShare = async () => {
-    if (navigator.share) {
-      try {
-        const shareText = type === 'zikr' ? content.zikr.text : 
-                         type === 'wisdom' ? content.wisdom.textAr : 
-                         content.hadith.arabic;
-        await navigator.share({
-          title: t.appName,
-          text: shareText,
-          url: window.location.href,
-        });
-      } catch (err) {
-        console.error('Error sharing:', err);
+  const handleShare = () => {
+    const shareText = type === 'zikr' ? content.zikr.text : 
+                     type === 'wisdom' ? content.wisdom.textAr : 
+                     content.hadith.arabic;
+                     
+    const shareTranslation = type === 'zikr' ? (language === 'en' ? content.zikr.translationEn : content.zikr.translationKu) :
+                     type === 'wisdom' ? (language === 'en' ? content.wisdom.textEn : content.wisdom.textKu) :
+                     (language === 'en' ? (content.hadith.english || content.hadith.kurdish) : content.hadith.kurdish);
+
+    const event = new CustomEvent('trigger-share', {
+      detail: { 
+        text: shareText, 
+        translation: shareTranslation || '', 
+        type: type === 'zikr' ? 'zikr' : 'ayah' 
       }
-    } else {
-      alert('Sharing is not supported in this browser. You can copy the link!');
-    }
+    });
+    window.dispatchEvent(event);
   };
 
   return (

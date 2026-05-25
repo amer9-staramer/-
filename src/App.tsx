@@ -32,6 +32,7 @@ import { QuranReader } from './components/QuranReader';
 import { AIChat } from './components/AIChat';
 import { AdminPortal } from './components/AdminPortal';
 import { Stats } from './components/Stats';
+import { ShareDialog } from './components/ShareDialog';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
 type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara';
@@ -366,6 +367,52 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<View>('home');
+
+  // Shared Share Dialog states
+  const [isShareOpen, setIsShareOpen] = useState(false);
+  const [shareText, setShareText] = useState('');
+  const [shareTranslation, setShareTranslation] = useState('');
+  const [shareType, setShareType] = useState<'zikr' | 'ayah'>('zikr');
+
+  const [shareData, setShareData] = useState<{
+    text: string;
+    translate: string;
+    type: string;
+    lang: 'ku' | 'ar' | 'en';
+  } | null>(null);
+
+  useEffect(() => {
+    // 1. Listen for standard event triggers across any component click
+    const handleTriggerShare = (e: Event) => {
+      const customEvent = e as CustomEvent<{ text: string; translation: string; type: 'zikr' | 'ayah' }>;
+      if (customEvent.detail) {
+        setShareText(customEvent.detail.text || '');
+        setShareTranslation(customEvent.detail.translation || '');
+        setShareType(customEvent.detail.type || 'zikr');
+        setIsShareOpen(true);
+      }
+    };
+    window.addEventListener('trigger-share', handleTriggerShare);
+
+    // 2. Intercept query parameters for receiving shared white-page card clicks
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('share') === 'true' && params.get('text')) {
+      const textParam = params.get('text') || '';
+      const transParam = params.get('translate') || params.get('translation') || params.get('tafsir') || '';
+      const typeParam = params.get('type') || 'zikr';
+      const langParam = (params.get('lang') || 'ku') as 'ku' | 'ar' | 'en';
+      setShareData({
+        text: decodeURIComponent(textParam),
+        translate: decodeURIComponent(transParam),
+        type: typeParam,
+        lang: langParam,
+      });
+    }
+
+    return () => {
+      window.removeEventListener('trigger-share', handleTriggerShare);
+    };
+  }, []);
 
   // Strict check: if isAdmin or view is admin-portal, but deviceId is not authorized, force fallback redirection
   useEffect(() => {
@@ -954,6 +1001,60 @@ export default function App() {
       setIsLoggingIn(false);
     }
   };
+
+  if (shareData) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-between p-6 md:p-12 font-sans font-medium antialiased" style={{ direction: 'rtl' }}>
+        <div className="w-full flex justify-end max-w-xl">
+          <button 
+            onClick={() => {
+              window.location.href = window.location.origin;
+            }}
+            className="flex items-center gap-2 px-5 py-2.5 bg-brand-emerald text-white font-black text-xs rounded-full hover:bg-emerald-800 transition-all shadow-md active:scale-95 cursor-pointer"
+          >
+            <Home size={14} />
+            <span>{shareData.lang === 'ku' ? 'کردنەوەی ئەپی سەرەکی' : shareData.lang === 'ar' ? 'فتح التطبيق الرئيسي' : 'Open Main App'}</span>
+          </button>
+        </div>
+
+        <div className="my-auto w-full max-w-sm bg-white p-10 md:p-12 rounded-[2.5rem] border border-slate-100 shadow-2xl space-y-10 relative overflow-hidden text-center">
+          <div className="absolute top-0 inset-x-0 h-2 bg-brand-emerald" />
+          
+          <div className="space-y-6">
+            <span className="text-3xl font-bold text-brand-emerald quran-font block">﷽</span>
+            <p className="text-2xl md:text-3xl text-slate-950 font-bold leading-[1.8] quran-font text-center px-2">
+              {shareData.text}
+            </p>
+          </div>
+
+          <div className="flex items-center justify-center gap-4">
+            <div className="h-px bg-slate-100 flex-1" />
+            <span className="text-amber-500 font-bold text-sm">✦ ✦ ✦</span>
+            <div className="h-px bg-slate-100 flex-1" />
+          </div>
+
+          <div className="space-y-6">
+            <p className="text-lg md:text-xl text-slate-700 leading-relaxed font-bold text-center pl-4 border-r-4 border-brand-emerald/10">
+              {shareData.translate}
+            </p>
+          </div>
+
+          <div className="pt-8 border-t border-slate-100 text-center flex flex-col items-center gap-2">
+            <span className="px-4 py-1.5 bg-emerald-50 text-brand-emerald text-xs font-black rounded-full border border-emerald-100 tracking-wider">
+              {shareData.lang === 'ku' ? 'ئەپی زیکرەکان' : shareData.lang === 'ar' ? 'تطبيق الأذكار' : 'Zikr App'}
+            </span>
+            <p className="text-[10px] uppercase tracking-widest font-bold text-slate-400">
+              {shareData.lang === 'en' ? 'Authentic Islamic Remembrance' : 'یادی خودا • سەرچاوەی بەڕێز بۆ پەرستش و ئارامی'}
+            </p>
+          </div>
+        </div>
+
+        <div className="text-center text-xs text-slate-400 font-medium">
+          {shareData.lang === 'ku' ? 'سوپاس بۆ پارچەکردنی خێر و بڵاوکردنەوەی چاکە' : shareData.lang === 'ar' ? 'الدال على الخير كفاعله' : 'Share the goodness • Reward is with Allah'}
+        </div>
+      </div>
+    );
+  }
 
   if (isAdmin) {
     return (
@@ -3041,6 +3142,16 @@ export default function App() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      {/* Structured Share Portal Dialog */}
+      <ShareDialog 
+        isOpen={isShareOpen}
+        onClose={() => setIsShareOpen(false)}
+        text={shareText}
+        translation={shareTranslation}
+        type={shareType}
+        language={language}
+      />
     </div>
   );
 }
