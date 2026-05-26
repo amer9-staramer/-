@@ -1275,6 +1275,18 @@ export default function App() {
             </motion.div>
           )}
 
+          {currentView === 'names' && (
+            <motion.div key="names" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <NamesOfAllah language={language} t={t} />
+            </motion.div>
+          )}
+
+          {currentView === 'prayer-times' && (
+            <motion.div key="prayer-times" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <PrayerTimes language={language} t={t} />
+            </motion.div>
+          )}
+
           {currentView === 'youth' && (
              <motion.div key="youth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                 <div className="text-center space-y-4 mb-8">
