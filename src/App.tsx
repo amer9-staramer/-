@@ -1287,6 +1287,12 @@ export default function App() {
             </motion.div>
           )}
 
+          {currentView === 'tasbih' && (
+            <motion.div key="tasbih" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <Tasbih language={language} t={t} onIncrement={(count, text) => incrementTasbih(count, text)} />
+            </motion.div>
+          )}
+
           {currentView === 'youth' && (
              <motion.div key="youth" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-6">
                 <div className="text-center space-y-4 mb-8">
