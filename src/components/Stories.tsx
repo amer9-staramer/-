@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { stories, Story } from '../data/stories';
-import { ChevronRight, ChevronLeft, BookOpen, Quote } from 'lucide-react';
+import { ChevronRight, ChevronLeft, BookOpen, Quote, Share2 } from 'lucide-react';
 
 interface StoriesProps {
   language: 'ku' | 'ar' | 'en';
@@ -40,26 +40,49 @@ export function Stories({ language, t }: StoriesProps) {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         <AnimatePresence mode="wait">
           {filteredStories.map((story, i) => (
-            <motion.button
+            <motion.div
               key={story.id}
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ delay: i * 0.1 }}
-              onClick={() => setSelectedStory(story)}
-              className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800 text-right group hover:shadow-xl hover:-translate-y-1 transition-all"
+              className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800 text-right group hover:shadow-xl hover:-translate-y-1 transition-all flex flex-col justify-between"
             >
-              <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-brand-emerald mb-6 group-hover:bg-brand-emerald group-hover:text-white transition-all">
-                <BookOpen size={24} />
+              <div className="space-y-4">
+                <div className="flex justify-between items-center mb-6">
+                  <div className="w-12 h-12 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center text-brand-emerald group-hover:bg-brand-emerald group-hover:text-white transition-all">
+                    <BookOpen size={24} />
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const event = new CustomEvent('trigger-share', {
+                        detail: {
+                          text: story.title[language],
+                          translation: story.moral[language] || story.content[language].substring(0, 150) + '...',
+                          type: 'zikr'
+                        }
+                      });
+                      window.dispatchEvent(event);
+                    }}
+                    className="p-3 bg-slate-50 dark:bg-slate-850 rounded-2xl text-slate-400 hover:text-brand-emerald dark:hover:text-brand-gold hover:bg-slate-100 transition-all cursor-pointer shadow-sm"
+                    title={language === 'ku' ? 'شێرکردن' : 'Share'}
+                  >
+                    <Share2 size={16} />
+                  </button>
+                </div>
+                <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-4">{story.title[language]}</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-bold line-clamp-3 leading-relaxed">
+                  {story.content[language]}
+                </p>
               </div>
-              <h3 className="text-2xl font-black text-slate-800 dark:text-slate-100 mb-4">{story.title[language]}</h3>
-              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold line-clamp-3 leading-relaxed">
-                {story.content[language]}
-              </p>
-              <div className="mt-8 flex items-center justify-end gap-2 text-brand-emerald dark:text-brand-gold font-black text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={() => setSelectedStory(story)}
+                className="mt-8 flex items-center justify-end gap-2 text-brand-emerald dark:text-brand-gold font-black text-[10px] uppercase tracking-widest opacity-0 group-hover:opacity-100 transition-opacity w-full text-right"
+              >
                 <span>{language === 'ku' ? 'زیاتر بخوێنەرەوە' : 'Read More'}</span>
                 <ChevronLeft size={14} />
-              </div>
-            </motion.button>
+              </button>
+            </motion.div>
           ))}
         </AnimatePresence>
       </div>
@@ -77,12 +100,30 @@ export function Stories({ language, t }: StoriesProps) {
               animate={{ scale: 1, y: 0 }}
               className="bg-white dark:bg-slate-900 w-full max-w-3xl max-h-[90vh] overflow-y-auto rounded-[3.5rem] shadow-2xl relative"
             >
-              <button 
-                onClick={() => setSelectedStory(null)}
-                className="absolute top-8 left-8 w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors z-10"
-              >
-                <ChevronRight size={24} />
-              </button>
+              <div className="absolute top-8 left-8 flex items-center gap-3 z-10">
+                <button
+                  onClick={() => {
+                    const event = new CustomEvent('trigger-share', {
+                      detail: {
+                        text: selectedStory.title[language],
+                        translation: selectedStory.moral[language],
+                        type: 'zikr'
+                      }
+                    });
+                    window.dispatchEvent(event);
+                  }}
+                  className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700 transition-all cursor-pointer"
+                  title={language === 'ku' ? 'شێرکردن' : 'Share'}
+                >
+                  <Share2 size={20} />
+                </button>
+                <button 
+                  onClick={() => setSelectedStory(null)}
+                  className="w-12 h-12 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-500 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-705 transition-colors"
+                >
+                  <ChevronRight size={24} />
+                </button>
+              </div>
 
               <div className="p-10 pt-20 space-y-10">
                 <div className="text-center space-y-4">

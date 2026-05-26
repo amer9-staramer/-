@@ -335,6 +335,8 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
 
 
 
+
+
   const checkAdmin = async (uid: string) => {
     try {
       if (isDeviceAdmin) {
@@ -1133,6 +1135,8 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
               </div>
             </motion.div>
           )}
+
+
 
           {activeTab === 'users' && (() => {
             const getUserDhikrs = (u: any) => {

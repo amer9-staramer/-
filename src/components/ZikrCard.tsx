@@ -7,7 +7,7 @@ import { doc, getDoc, setDoc, updateDoc, increment as firestoreIncrement } from 
 import { db } from '../lib/firebase';
 
 export interface ZikrCardProps {
-  zikr: Zikr;
+  zikr: Zikr & { isCustom?: boolean };
   language: 'ku' | 'en' | 'ar';
   onComplete?: (zikrTitle: string) => void;
   onIncrement?: (zikrTitle: string) => void;
@@ -107,6 +107,8 @@ export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardPr
           <Share2 size={15} />
         </button>
       </div>
+
+
 
       <div className="flex justify-center items-center mb-6">
         <div 

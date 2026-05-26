@@ -62,8 +62,147 @@ interface ShareDialogProps {
 export function ShareDialog({ isOpen, onClose, text, translation, type, language }: ShareDialogProps) {
   const [copied, setCopied] = useState(false);
   const [isDownloading, setIsDownloading] = useState(false);
+  const [imageUrl, setImageUrl] = useState<string>('');
   const t = shareTranslations[language] || shareTranslations.ku;
   const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isOpen || !text) {
+      setImageUrl('');
+      return;
+    }
+
+    const generateImagePreview = () => {
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      if (!ctx) return;
+
+      const width = 1080;
+      const height = 1350;
+      canvas.width = width;
+      canvas.height = height;
+
+      // Draw pure minimalist white background
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, width, height);
+
+      // Draw outer elegant gold/emerald double border
+      ctx.strokeStyle = '#065f46'; // Emerald
+      ctx.lineWidth = 14;
+      ctx.strokeRect(30, 30, width - 60, height - 60);
+
+      ctx.strokeStyle = '#fbbf24'; // Gold inner frame
+      ctx.lineWidth = 4;
+      ctx.strokeRect(55, 55, width - 110, height - 110);
+
+      // Helper for wrapping text
+      const wrapText = (
+        context: CanvasRenderingContext2D,
+        textStr: string,
+        x: number,
+        y: number,
+        maxWidth: number,
+        lineHeight: number,
+        align: 'center' | 'right' | 'left'
+      ) => {
+        context.textAlign = align;
+        const words = textStr.split(' ');
+        let line = '';
+        const lines = [];
+
+        for (let n = 0; n < words.length; n++) {
+          const testLine = line + words[n] + ' ';
+          const metrics = context.measureText(testLine);
+          const testWidth = metrics.width;
+          if (testWidth > maxWidth && n > 0) {
+            lines.push(line);
+            line = words[n] + ' ';
+          } else {
+            line = testLine;
+          }
+        }
+        lines.push(line);
+
+        let currentY = y;
+        for (let i = 0; i < lines.length; i++) {
+          context.fillText(lines[i].trim(), x, currentY);
+          currentY += lineHeight;
+        }
+        return lines.length * lineHeight;
+      };
+
+      // Draw header emblem
+      ctx.fillStyle = '#065f46';
+      ctx.font = 'bold 44px Amiri, "Noto Naskh Arabic", Georgia, serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('﷽', width / 2, 140);
+
+      // Draw title decoration stars/ornaments
+      ctx.fillStyle = '#fbbf24';
+      ctx.font = '36px sans-serif';
+      ctx.fillText('✦  ✦  ✦', width / 2, 200);
+
+      // Draw Arabic Text
+      ctx.fillStyle = '#0f172a'; // Slate 900
+      ctx.font = 'bold 50px Amiri, "Noto Naskh Arabic", Georgia, serif';
+      const arabicLineHeight = 90;
+      const arabicY = 320;
+      const maxTextWidth = width - 240;
+
+      const arabicHeight = wrapText(ctx, text, width / 2, arabicY, maxTextWidth, arabicLineHeight, 'center');
+
+      // Separator Line
+      const sepY = arabicY + arabicHeight + 50;
+      ctx.strokeStyle = '#e2e8f0'; // Slate 200
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.moveTo(350, sepY);
+      ctx.lineTo(width - 350, sepY);
+      ctx.stroke();
+
+      // Small gold diamond in center of separator
+      ctx.fillStyle = '#fbbf24';
+      ctx.beginPath();
+      ctx.moveTo(width / 2, sepY - 14);
+      ctx.lineTo(width / 2 + 14, sepY);
+      ctx.lineTo(width / 2, sepY + 14);
+      ctx.lineTo(width / 2 - 14, sepY);
+      ctx.fill();
+
+      // Draw Translation / Tafsir Text
+      ctx.fillStyle = '#475569'; // Slate 600
+      ctx.font = '500 38px "Vazirmatn", sans-serif';
+      const transLineHeight = 62;
+      const transY = sepY + 90;
+      wrapText(ctx, translation || '', width / 2, transY, maxTextWidth, transLineHeight, 'center');
+
+      // Draw elegant App branding and info at the bottom
+      ctx.fillStyle = '#f8fafc'; // Gray 50
+      ctx.fillRect(120, height - 210, width - 240, 120);
+      ctx.lineWidth = 2;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.strokeRect(120, height - 210, width - 240, 120);
+
+      // Footer Logo Text
+      ctx.fillStyle = '#065f46';
+      ctx.font = 'bold 38px "Vazirmatn", sans-serif';
+      ctx.fillText('ئەپی زیکرەکان', width / 2, height - 155);
+
+      ctx.fillStyle = '#64748b'; // Slate 500
+      ctx.font = '26px "Vazirmatn", sans-serif';
+      ctx.fillText('Zikr Islamic App  •  سەرچاوەی بەڕێز بۆ پەرستش و ئارامی', width / 2, height - 110);
+
+      try {
+        const dataUrl = canvas.toDataURL('image/png');
+        setImageUrl(dataUrl);
+      } catch (err) {
+        console.error('Failed to generate preview image url:', err);
+      }
+    };
+
+    const timer = setTimeout(generateImagePreview, 300);
+    return () => clearTimeout(timer);
+  }, [isOpen, text, translation]);
 
   // Generate the share link pointing to our custom standalone white sharing view
   const getShareLink = () => {
@@ -236,19 +375,56 @@ export function ShareDialog({ isOpen, onClose, text, translation, type, language
     ctx.font = '24px "Vazirmatn", sans-serif';
     ctx.fillText('Zikr Islamic App  •  سەرچاوەی بەڕێز بۆ پەرستش و ئارامی', width / 2, height - 105);
 
-    // Save and download
+    // Save and download with full support for mobile native sharing and desktop downloads
     setTimeout(() => {
       try {
-        const url = canvas.toDataURL('image/png');
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `Zikr_${Date.now()}.png`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        canvas.toBlob(async (blob) => {
+          if (!blob) {
+            setIsDownloading(false);
+            return;
+          }
+          
+          const filename = `Zikr_${Date.now()}.png`;
+          const file = new File([blob], filename, { type: 'image/png' });
+          
+          if (navigator.canShare && navigator.canShare({ files: [file] }) && navigator.share) {
+            try {
+              await navigator.share({
+                files: [file],
+                title: t.appTitle || 'Zikr App',
+                text: language === 'ku' ? 'وێنەی زیکری ئەپی زیکرەکان' : 'Zikr Card'
+              });
+              setIsDownloading(false);
+              return;
+            } catch (shareErr) {
+              console.warn('File share via navigator.share skipped or cancelled, falling back:', shareErr);
+            }
+          }
+
+          // Desktop fallback or when native share is unavailable
+          try {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            setTimeout(() => URL.revokeObjectURL(url), 1000);
+          } catch (dlErr) {
+            console.error('Download trigger failed:', dlErr);
+            // Absolute fallback: Open image
+            const fallbackUrl = canvas.toDataURL('image/png');
+            const newTab = window.open();
+            if (newTab) {
+              newTab.document.write(`<img src="${fallbackUrl}" style="max-width: 100%;" />`);
+            }
+          } finally {
+            setIsDownloading(false);
+          }
+        }, 'image/png');
       } catch (err) {
-        console.error('Failed to export canvas:', err);
-      } finally {
+        console.error('Failed to export canvas blob:', err);
         setIsDownloading(false);
       }
     }, 600);
@@ -300,35 +476,51 @@ export function ShareDialog({ isOpen, onClose, text, translation, type, language
               
               <div 
                 ref={cardRef} 
-                className="bg-slate-50 dark:bg-slate-950 p-6 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center transition-all"
+                className="bg-slate-50 dark:bg-slate-950 p-6 rounded-3xl border-2 border-dashed border-slate-200 dark:border-slate-800 flex flex-col items-center justify-center transition-all gap-4"
               >
-                {/* The actual previewed white card */}
-                <div className="bg-white w-full max-w-md p-8 md:p-10 rounded-2xl border border-slate-100 shadow-md text-center space-y-6 select-none relative overflow-hidden">
-                  <div className="absolute top-0 inset-x-0 h-1 bg-brand-emerald" />
-                  
-                  {/* Arabic header emblem */}
-                  <span className="text-2xl text-brand-emerald font-bold quran-font block">﷽</span>
-                  
-                  {/* Arabic Text */}
-                  <p className="text-xl md:text-2xl font-bold text-slate-900 leading-relaxed quran-font" dir="rtl">
-                    {text}
-                  </p>
-
-                  <div className="w-16 h-0.5 bg-slate-100 mx-auto rounded-full" />
-
-                  {/* Translation */}
-                  <p className="text-sm md:text-base text-slate-600 font-medium leading-relaxed font-kurdish-display">
-                    {translation}
-                  </p>
-
-                  {/* App Footnote */}
-                  <div className="pt-4 border-t border-slate-50 flex items-center justify-center gap-2">
-                    <span className="w-2 h-2 rounded-full bg-brand-emerald animate-ping" />
-                    <span className="text-xs font-black text-brand-emerald tracking-wide uppercase">
-                      {t.appTitle}
-                    </span>
+                {imageUrl ? (
+                  <div className="flex flex-col items-center gap-4 w-full">
+                    <img 
+                      src={imageUrl} 
+                      className="w-full max-w-xs rounded-2xl border-4 border-white shadow-xl hover:scale-[1.02] transition-transform select-all cursor-pointer" 
+                      alt="Remembrance Card"
+                      referrerPolicy="no-referrer"
+                    />
+                    
+                    <div className="text-center bg-brand-emerald/10 border border-brand-emerald/15 px-4 py-2.5 rounded-xl max-w-xs">
+                      <p className="text-[11px] text-brand-emerald font-black leading-relaxed">
+                        {language === 'ku' 
+                          ? 'بۆ مۆبایل: دەستت لەسەر وێنەکەی سەرەوە دابگرە بۆ پاشەکەوتکردن!' 
+                          : language === 'ar' 
+                          ? 'للموبايل: اضغط مطولاً على الصورة أعلاه لحفظها مباشرةً!' 
+                          : 'For Mobile: Press and hold (long press) the image above to save directly!'}
+                      </p>
+                    </div>
                   </div>
-                </div>
+                ) : (
+                  <div className="bg-white w-full max-w-md p-8 md:p-10 rounded-2xl border border-slate-100 shadow-md text-center space-y-6 select-none relative overflow-hidden">
+                    <div className="absolute top-0 inset-x-0 h-1 bg-brand-emerald" />
+                    
+                    <span className="text-2xl text-brand-emerald font-bold quran-font block">﷽</span>
+                    
+                    <p className="text-xl md:text-2xl font-bold text-slate-900 leading-relaxed quran-font" dir="rtl">
+                      {text}
+                    </p>
+
+                    <div className="w-16 h-0.5 bg-slate-100 mx-auto rounded-full" />
+
+                    <p className="text-sm md:text-base text-slate-600 font-medium leading-relaxed font-kurdish-display">
+                      {translation}
+                    </p>
+
+                    <div className="pt-4 border-t border-slate-50 flex items-center justify-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-brand-emerald animate-ping" />
+                      <span className="text-xs font-black text-brand-emerald tracking-wide uppercase">
+                        {t.appTitle}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

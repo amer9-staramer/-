@@ -1,5 +1,6 @@
 
 import { motion } from 'motion/react';
+import { Share2 } from 'lucide-react';
 import { namesOfAllah } from '../data/namesOfAllah';
 
 interface NamesOfAllahProps {
@@ -24,8 +25,28 @@ export function NamesOfAllah({ language, t }: NamesOfAllahProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.02 }}
             key={name.id}
-            className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300"
+            className="bg-white dark:bg-slate-900 p-6 rounded-[2.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center group hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative"
           >
+            <div className="absolute top-4 right-4 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  const event = new CustomEvent('trigger-share', {
+                    detail: {
+                      text: name.arabic,
+                      translation: `${name.transliteration} • ${name.kurdish}\n\n${name.meaning}`,
+                      type: 'zikr'
+                    }
+                  });
+                  window.dispatchEvent(event);
+                }}
+                className="p-1.5 text-slate-400 hover:text-brand-emerald hover:bg-slate-50 rounded-lg transition-all cursor-pointer shadow-sm"
+                title={language === 'ku' ? 'شێرکردن' : 'Share'}
+              >
+                <Share2 size={12} />
+              </button>
+            </div>
+
             <div className="w-10 h-10 bg-brand-emerald/5 dark:bg-brand-emerald/20 rounded-xl flex items-center justify-center text-brand-emerald/20 text-[10px] font-black mb-3 group-hover:bg-brand-emerald group-hover:text-white transition-all">
               {name.id}
             </div>

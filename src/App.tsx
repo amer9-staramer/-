@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
-import { Sun, Moon, Sunrise, Stars, Clock, MessageSquare, Menu, X, User, Home, BookOpen, Quote, ChevronLeft, ChevronRight, Heart, Map, Plane, Compass, Languages, Loader2, MapPin, Shirt, Library, Filter, Search, Zap, BarChart, ShieldCheck, Lock, Globe, Grid2X2, Droplets, Utensils, CloudRain, Smile, Frown, ShoppingBag, Users, Coffee, Bell, Trash2, Ghost, Trophy, Send, QrCode } from 'lucide-react';
+import { Sun, Moon, Sunrise, Stars, Clock, MessageSquare, Menu, X, User, Home, BookOpen, Quote, ChevronLeft, ChevronRight, Heart, Map, Plane, Compass, Languages, Loader2, MapPin, Shirt, Library, Filter, Search, Zap, BarChart, ShieldCheck, Lock, Globe, Grid2X2, Droplets, Utensils, CloudRain, Smile, Frown, ShoppingBag, Users, Coffee, Bell, Trash2, Ghost, Trophy, Send, QrCode, Share2, Plus, Calculator, Calendar } from 'lucide-react';
 import { zikrs, Zikr } from './data/zikrs';
 import { hadiths } from './data/hadiths';
 import { namesOfAllah } from './data/namesOfAllah';
@@ -33,9 +33,11 @@ import { AIChat } from './components/AIChat';
 import { AdminPortal } from './components/AdminPortal';
 import { Stats } from './components/Stats';
 import { ShareDialog } from './components/ShareDialog';
+import { PrayerCountdown } from './components/PrayerCountdown';
+import { PrayerCalculator } from './components/PrayerCalculator';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
-type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara';
+type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara' | 'prayer-calc';
 type Language = 'ku' | 'en' | 'ar';
 type TafsirType = 'asan' | 'ibnkathir' | 'tabari' | 'zamakhshari';
 type HajjType = 'hajj' | 'umrah';
@@ -251,6 +253,8 @@ export default function App() {
   };
 
 
+
+
   
   useEffect(() => {
     const isLocalAdmin = localStorage.getItem('isLocalAdminAuthorized') === 'true';
@@ -453,20 +457,11 @@ export default function App() {
   }, []);
 
   const [globalFontSize, setGlobalFontSize] = useState(16);
-  const [themeMode, setThemeMode] = useState<'light' | 'dark'>(() => {
-    const saved = localStorage.getItem('themeMode');
-    if (saved === 'dark' || saved === 'light') return saved;
-    const hour = new Date().getHours();
-    return (hour >= 19 || hour < 6) ? 'dark' : 'light';
-  });
+  const [themeMode, setThemeMode] = useState<'light' | 'dark'>('light');
 
   useEffect(() => {
-    localStorage.setItem('themeMode', themeMode);
-    if (themeMode === 'dark') {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
+    localStorage.setItem('themeMode', 'light');
+    document.documentElement.classList.remove('dark');
   }, [themeMode]);
 
   const [selectedMarriageCategory, setSelectedMarriageCategory] = useState<MarriageStep['category'] | 'all'>('all');
@@ -702,8 +697,8 @@ export default function App() {
       const q = normalizeText(adhkarSearchQuery);
       result = result.filter(z => 
         normalizeText(z.text).includes(q) || 
-        normalizeText(z.translationKu).includes(q) || 
-        normalizeText(z.translationEn).includes(q)
+        normalizeText(z.translationKu || '').includes(q) || 
+        normalizeText(z.translationEn || '').includes(q)
       );
     }
     return result;
@@ -862,6 +857,13 @@ export default function App() {
               label={t.prayerTimes} 
               active={currentView === 'prayer-times'} 
               onClick={() => { setCurrentView('prayer-times'); setIsSidebarOpen(false); }} 
+            />
+
+            <SidebarLink 
+              icon={<Calculator size={20} className="text-brand-emerald" />} 
+              label={language === 'ku' ? 'حیساباتی تەمەن و نوێژ' : language === 'ar' ? 'حاسبة العمر والصلوات' : 'Islamic Prayer Calculator'} 
+              active={currentView === 'prayer-calc'} 
+              onClick={() => { setCurrentView('prayer-calc'); setIsSidebarOpen(false); }} 
             />
 
             <SidebarLink 
@@ -1130,13 +1132,7 @@ export default function App() {
               {t.appName}
             </h1>
             
-            <button 
-              onClick={() => setThemeMode(prev => prev === 'light' ? 'dark' : 'light')}
-              className="p-2 md:p-3 bg-slate-100 dark:bg-slate-800 rounded-2xl text-slate-500 transition-all hover:scale-110 active:scale-95"
-            >
-              {themeMode === 'light' ? <Moon size={18} /> : <Sun size={18} />}
-            </button>
-            
+
             <div className="flex-1 max-w-xs relative group hidden md:block lg:ml-4">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <Search className="text-slate-300 group-focus-within:text-brand-emerald dark:group-focus-within:text-brand-gold transition-colors" size={14} />
@@ -1160,6 +1156,12 @@ export default function App() {
 
       <main className="flex-1 max-w-4xl mx-auto w-full px-4 py-8 overflow-x-hidden">
         <AnimatePresence mode="wait">
+          {currentView === 'prayer-calc' && (
+            <motion.div key="prayer-calc" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="pb-32 px-2">
+              <PrayerCalculator language={language} />
+            </motion.div>
+          )}
+
           {currentView === 'about' && (
             <motion.div key="about" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-8 pb-20">
               <div className="bg-white dark:bg-slate-900 p-10 rounded-[3rem] shadow-xl border border-slate-100 dark:border-slate-800 text-center space-y-8 max-w-2xl mx-auto">
@@ -1478,9 +1480,27 @@ export default function App() {
                     </div>
 
                     <div className="flex justify-between items-center relative z-10">
-                      <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-400 px-4 py-1.5 rounded-full uppercase tracking-widest">
-                        {(t as any)[item.type] || item.type}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black bg-indigo-50 dark:bg-indigo-900/30 text-indigo-500 dark:text-indigo-400 px-4 py-1.5 rounded-full uppercase tracking-widest">
+                          {(t as any)[item.type] || item.type}
+                        </span>
+                        <button
+                          onClick={() => {
+                            const event = new CustomEvent('trigger-share', {
+                              detail: {
+                                text: item.textAr,
+                                translation: language === 'en' ? item.textEn : language === 'ar' ? item.textAr : item.textKu,
+                                type: item.type === 'ayah' ? 'ayah' : 'zikr'
+                              }
+                            });
+                            window.dispatchEvent(event);
+                          }}
+                          className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:bg-slate-50 dark:hover:bg-slate-850 transition-all cursor-pointer"
+                          title={language === 'ku' ? 'شێرکردن' : 'Share'}
+                        >
+                          <Share2 size={14} />
+                        </button>
+                      </div>
                       {item.reference && <span className="text-[10px] text-slate-300 dark:text-slate-600 font-bold">{item.reference}</span>}
                     </div>
                     <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 text-center leading-[2.2] quran-font px-4 relative z-10" dir="rtl">{item.textAr}</p>
@@ -1605,6 +1625,9 @@ export default function App() {
                 </h2>
               </div>
 
+              {/* Dynamic Prayer Countdown */}
+              <PrayerCountdown language={language} />
+
               <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto">
                 {/* 1. Daily Zikr */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-[3.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center space-y-6">
@@ -1669,6 +1692,7 @@ export default function App() {
                       { id: 'hadiths', label: t.hadith, icon: <MessageSquare className="text-blue-500" /> },
                       { id: 'marriage', label: t.marriageHub, icon: <Heart className="text-rose-500" /> },
                       { id: 'tasbih', label: t.tasbih, icon: <Zap className="text-brand-gold" /> },
+                      { id: 'prayer-calc', label: language === 'ku' ? 'حیساباتی نوێژ' : language === 'ar' ? 'حاسبة الصلوات' : 'Prayer Calc', icon: <Calculator className="text-amber-500" /> },
                       { id: 'hajj', label: t.hajj, icon: <Compass className="text-indigo-500" /> },
                       { id: 'stories', label: t.stories, icon: <Library className="text-brand-emerald" /> },
                       { id: 'chat', label: t.aiChat || 'AI Chat', icon: <MessageSquare className="text-brand-emerald" /> },
@@ -1800,7 +1824,25 @@ export default function App() {
               className="bg-white p-10 rounded-[3rem] shadow-xl border border-slate-100"
             >
               <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <div className="bg-brand-emerald/10 text-brand-emerald px-6 py-2 rounded-full font-black">ئایەتولکورسی</div>
+                <div className="flex items-center gap-3">
+                  <div className="bg-brand-emerald/10 text-brand-emerald px-6 py-2 rounded-full font-black">ئایەتولکورسی</div>
+                  <button
+                    onClick={() => {
+                      const event = new CustomEvent('trigger-share', {
+                        detail: {
+                          text: "اللَّهُ لَا إِلَهَ إِلَّا هُوَ الْحَيُّ الْقَيُّومُ لَا تَأْخُذُهُ سِنَةٌ وَلَا نَوْمٌ لَهُ مَا فِي السَّمَاوَاتِ وَمَا فِي الْأَرْضِ مَنْ ذَا الَّذِي يَشْفَعُ عِنْدَهُ إِلَّا بِإِذْنِهِ يَعْلَمُ مَا بَيْنَ أَيْدِيهِمْ وَمَا خَلْفَهُمْ وَلَا يُحِيطُونَ بِشَيْءٍ مِنْ عِلْمِهِ إِلَّا بِمَا شَاءَ وَسِعَ كُرْسِيُّهُ السَّمَاوَاتِ وَالْأَرْضَ وَلَا يَئُودُهُ حِفْظُهُمَا وَهُوَ الْعَلِيُّ الْعَظِيمُ",
+                          translation: kursiTafsirs[activeTafsir][language].text,
+                          type: 'ayah'
+                        }
+                      });
+                      window.dispatchEvent(event);
+                    }}
+                    className="p-1.5 rounded-lg text-slate-400 hover:text-brand-emerald hover:bg-slate-50 border border-slate-100 dark:border-slate-800 transition-all cursor-pointer flex items-center justify-center shadow-sm"
+                    title={language === 'ku' ? 'شێرکردن' : 'Share'}
+                  >
+                    <Share2 size={16} />
+                  </button>
+                </div>
                 
                 <div className="flex bg-slate-100 p-1 rounded-2xl overflow-x-auto max-w-full">
                   {Object.keys(kursiTafsirs).map(t => (
@@ -1959,7 +2001,25 @@ export default function App() {
                             {hadith.narrator && <p className="text-[10px] font-bold text-slate-400">{hadith.narrator}</p>}
                           </div>
                         </div>
-                        <span className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{selectedHadithCollection}</span>
+                        <div className="flex items-center gap-3">
+                          <span className="text-[10px] font-black text-slate-300 dark:text-slate-500 uppercase tracking-widest">{selectedHadithCollection}</span>
+                          <button
+                            onClick={() => {
+                              const event = new CustomEvent('trigger-share', {
+                                detail: {
+                                  text: hadith.arabicText,
+                                  translation: hadith.kurdishText || hadith.englishText || '',
+                                  type: 'ayah'
+                                }
+                              });
+                              window.dispatchEvent(event);
+                            }}
+                            className="p-2 rounded-xl text-slate-400 hover:text-brand-emerald dark:hover:text-brand-gold hover:bg-slate-100 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                            title={language === 'ku' ? 'شێرکردن' : 'Share'}
+                          >
+                            <Share2 size={16} />
+                          </button>
+                        </div>
                       </div>
 
                       <div className="p-8 space-y-6">
@@ -2500,24 +2560,6 @@ export default function App() {
             </motion.div>
           )}
 
-          {currentView === 'tasbih' && (
-            <motion.div key="tasbih" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }}>
-              <Tasbih language={language} t={t} onIncrement={incrementTasbih} />
-            </motion.div>
-          )}
-
-          {currentView === 'names' && (
-            <motion.div key="names" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <NamesOfAllah language={language} t={t} />
-            </motion.div>
-          )}
-
-          {currentView === 'prayer-times' && (
-            <motion.div key="prayer-times" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}>
-              <PrayerTimes language={language} t={t} />
-            </motion.div>
-          )}
-
           {currentView === 'settings' && (
             <motion.div key="settings" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} className="max-w-2xl mx-auto space-y-8">
               <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
@@ -2703,9 +2745,27 @@ export default function App() {
                       {loveWisdom.map((item) => (
                         <div key={item.id} className="bg-white dark:bg-slate-900 p-8 rounded-[3rem] shadow-sm border border-slate-100 dark:border-slate-800 space-y-6 group hover:shadow-xl transition-all duration-500">
                           <div className="flex justify-between items-center">
-                            <span className="text-[10px] font-black bg-rose-50 dark:bg-rose-900/30 text-rose-500 px-4 py-1.5 rounded-full uppercase tracking-widest">
-                              {(t as any)[item.type] || item.type}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className="text-[10px] font-black bg-rose-50 dark:bg-rose-900/30 text-rose-500 px-4 py-1.5 rounded-full uppercase tracking-widest">
+                                {(t as any)[item.type] || item.type}
+                              </span>
+                              <button
+                                onClick={() => {
+                                  const event = new CustomEvent('trigger-share', {
+                                    detail: {
+                                      text: item.textAr,
+                                      translation: language === 'en' ? item.textEn : language === 'ar' ? item.textAr : item.textKu,
+                                      type: item.type === 'ayah' ? 'ayah' : 'zikr'
+                                    }
+                                  });
+                                  window.dispatchEvent(event);
+                                }}
+                                className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all cursor-pointer"
+                                title={language === 'ku' ? 'شێرکردن' : 'Share'}
+                              >
+                                <Share2 size={14} />
+                              </button>
+                            </div>
                             {item.reference && <span className="text-[10px] text-slate-300 dark:text-slate-600 font-bold">{item.reference}</span>}
                           </div>
                           <p className="text-2xl font-bold text-slate-800 dark:text-slate-100 text-center leading-[2.2] quran-font px-4" dir="rtl">{item.textAr}</p>
