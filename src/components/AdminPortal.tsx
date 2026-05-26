@@ -1500,6 +1500,171 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
               </div>
             );
           })()}
+
+          {activeTab === 'zikrs' && (() => {
+            const onlineCount = stats?.usersList?.filter(u => isUserOnline(u)).length || 0;
+            const trueOnline = onlineCount || 1;
+            const totalDevices = stats?.totalUsers || stats?.usersList?.length || 1;
+            const totalTasbihCount = stats?.totalTasbihCount || 0;
+            const totalZikrsCompleted = stats?.usersList?.reduce((acc: number, u: any) => acc + (u.totalZikrsCompleted || 0), 0) || 0;
+            const totalPoints = stats?.totalPoints || 0;
+            const zikrListSnapshot = stats?.zikrStats || [];
+
+            return (
+              <motion.div 
+                key="analytics-community"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-8"
+              >
+                <div className="bg-slate-900/40 backdrop-blur-xl p-8 rounded-[3rem] border border-slate-800 space-y-8">
+                  <div className="flex items-center gap-4 border-b border-slate-800 pb-4 justify-between" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                     <div className="flex items-center gap-3">
+                       <Users size={28} className="text-brand-emerald" />
+                       <div className="text-right sm:text-left">
+                         <h3 className="text-xl font-black text-white uppercase tracking-wider">
+                           {language === 'ku' ? 'ئامارەکانی کۆمەڵگە ڕاستەوخۆ' : language === 'ar' ? 'إحصائيات المجتمع المباشرة' : 'Live Community Statistics'}
+                         </h3>
+                         <p className="text-[10px] text-slate-500 font-extrabold uppercase tracking-widest">
+                           {language === 'ku' ? 'ئەنجامەکانی خەڵک لەگەڵ ژمارەی مۆبایلی بەشداربووان' : language === 'ar' ? 'مشاركات المجتمع الكلي مع عدد الهواتف' : 'Global participation indicators & active devices'}
+                         </p>
+                       </div>
+                     </div>
+                  </div>
+
+                  {/* Device Beacon Cards - Shows App Installs vs Online */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {/* Card 1: Total Installs / Registered Devices */}
+                    <div className="flex gap-4 items-center justify-between p-6 bg-slate-950/60 rounded-3xl border border-slate-800 transition-all hover:border-slate-705">
+                      <div className="flex items-center gap-3">
+                        <div className="w-12 h-12 bg-brand-emerald/10 text-brand-emerald rounded-2xl flex items-center justify-center">
+                          <Smartphone size={24} />
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-slate-100">
+                            {language === 'ku' ? 'تۆمارکراوی ئەپەکە' : language === 'ar' ? 'الأجهزة المسجلة' : 'Registered Devices'}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-bold leading-normal">
+                            {language === 'ku' ? 'کۆی گشتی مۆبایلەکان' : language === 'ar' ? 'إجمالي الأجهزة المثبتة' : 'Total installed devices/users'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-3xl font-extrabold text-brand-emerald dark:text-brand-gold">{totalDevices}</span>
+                        <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">
+                          {language === 'ku' ? 'مۆبایل' : language === 'ar' ? 'جهاز' : 'Devices'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Card 2: Currently Active Online Devices */}
+                    <div className="flex gap-4 items-center justify-between p-6 bg-slate-950/60 rounded-3xl border border-slate-800 transition-all hover:border-slate-705">
+                      <div className="flex items-center gap-3">
+                        <div className="relative w-12 h-12 bg-amber-500/10 text-amber-500 rounded-2xl flex items-center justify-center">
+                          <Smartphone size={24} />
+                          <span className="absolute -top-1 -right-1 flex h-3 w-3">
+                            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+                            <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+                          </span>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-slate-100">
+                            {language === 'ku' ? 'مۆبایلە چالاکەکان' : language === 'ar' ? 'الهواتف النشطة الآن' : 'Active Mobile Devices'}
+                          </p>
+                          <p className="text-[10px] text-slate-500 font-bold leading-normal">
+                            {language === 'ku' ? 'سەر هێڵ لە ئێستادا' : language === 'ar' ? 'المتصلين بالإنترنت حالياً' : 'Currently active on-line'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <span className="text-3xl font-extrabold text-amber-500">{trueOnline}</span>
+                        <span className="text-[10px] text-slate-500 font-black block uppercase tracking-wider">
+                          {language === 'ku' ? 'لەسەر هێڵە' : language === 'ar' ? 'متصل' : 'Online'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* General Community Totals Summary widget */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="p-5 bg-slate-950/40 rounded-2xl border border-slate-805 text-center">
+                       <span className="text-[10px] text-slate-500 font-black uppercase block mb-1">
+                         {language === 'ku' ? 'تەسریحەکانی کۆمەڵگە' : language === 'ar' ? 'تسبيحات المجتمع الكلي' : 'Total Community Tasbihs'}
+                       </span>
+                       <span className="text-2xl font-black text-white">
+                         {totalTasbihCount}
+                       </span>
+                    </div>
+                    <div className="p-5 bg-slate-950/40 rounded-2xl border border-slate-805 text-center">
+                       <span className="text-[10px] text-slate-500 font-black uppercase block mb-1">
+                         {language === 'ku' ? 'زیکرە بەکۆمەڵەکان' : language === 'ar' ? 'مجموع الأذكار' : 'Total Community Zikrs'}
+                       </span>
+                       <span className="text-2xl font-black text-white">
+                         {totalZikrsCompleted}
+                       </span>
+                    </div>
+                    <div className="p-5 bg-slate-950/40 rounded-2xl border border-slate-805 text-center">
+                       <span className="text-[10px] text-slate-550 font-black uppercase block mb-1">
+                         {language === 'ku' ? 'خاڵەکانی کۆمەڵگە' : language === 'ar' ? 'نقاط المجتمع العامة' : 'Total Global Points'}
+                       </span>
+                       <span className="text-2xl font-black text-brand-emerald">
+                         {totalPoints}
+                       </span>
+                    </div>
+                  </div>
+
+                  {/* Percentage Shares of each Zikr (ڕێژەی زیکرەکانی خەڵک) */}
+                  <div className="space-y-4 pt-4 border-t border-slate-800">
+                    <h4 className="text-sm font-black text-white uppercase tracking-wider flex items-center gap-2" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                      <PieChartIcon size={18} className="text-amber-500" />
+                      <span>
+                        {language === 'ku' ? 'ڕێژەی زیکرەکانی خەڵک (%)' : language === 'ar' ? 'نسب الأذكار المقروءة (%)' : 'Community Zikr Percentages (%)'}
+                      </span>
+                    </h4>
+                    <p className="text-[10px] text-slate-500 font-bold leading-relaxed -mt-2" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                      {language === 'ku' ? 'ڕێژەی خوێندنەوەی هەر زیکرێک لەلایەن بەکارهێنەرانی ئەپلیکەیشنەوە بە شێوەی ڕاستەوخۆ' : language === 'ar' ? 'نسب مشاركة وتفاعل المجتمع لقراءة كل ذكر مباشرة' : 'Real-time relative statistics measuring participation for each zikr is displayed below.'}
+                    </p>
+
+                    <div className="space-y-5">
+                      {zikrListSnapshot.length === 0 ? (
+                        <div className="text-center py-6 text-xs text-slate-500 font-bold">
+                          {language === 'ku' ? 'هیچ زانیاری زیکرێک نییە تا پیشان بدرێت...' : language === 'ar' ? 'لا يوجد تفاعلات مسجلة بعد...' : 'Recording initial community parameters...'}
+                        </div>
+                      ) : (
+                        zikrListSnapshot.map((item: any) => {
+                          const count = item.totalClicks || item.viewCount || 1;
+                          const total = zikrListSnapshot.reduce((acc: number, c: any) => acc + (c.totalClicks || c.viewCount || 1), 0) || 1;
+                          const pct = Math.round((count / total) * 100);
+                          
+                          return (
+                            <div key={item.id} className="space-y-1.5 transition-all p-3 hover:bg-slate-950 rounded-2xl border border-transparent hover:border-slate-850">
+                              <div className="flex justify-between items-center text-xs" dir={language === 'en' ? 'ltr' : 'rtl'}>
+                                <span className="font-bold text-slate-300 truncate max-w-[180px] sm:max-w-md quran-font text-right">
+                                  {item.title}
+                                </span>
+                                <span className="font-black text-brand-emerald shrink-0">
+                                  {pct}% ({count})
+                                </span>
+                              </div>
+                              <div className="w-full h-3 bg-slate-950 rounded-full overflow-hidden border border-slate-800">
+                                <motion.div 
+                                  initial={{ width: 0 }}
+                                  animate={{ width: `${pct}%` }}
+                                  transition={{ duration: 0.8, ease: 'easeOut' }}
+                                  className="h-full bg-gradient-to-r from-emerald-500 to-teal-400 rounded-full"
+                                />
+                              </div>
+                            </div>
+                          );
+                        })
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })()}
         </AnimatePresence>
       </main>
     </div>

@@ -887,12 +887,14 @@ export default function App() {
               onClick={() => { setCurrentView('youth'); setIsSidebarOpen(false); }} 
             />
 
-            <SidebarLink 
-              icon={<BarChart size={20} className="text-indigo-400" />} 
-              label={t.stats} 
-              active={currentView === 'stats'} 
-              onClick={() => { setCurrentView('stats'); setIsSidebarOpen(false); }} 
-            />
+            {isDeviceAdmin && (
+              <SidebarLink 
+                icon={<BarChart size={20} className="text-indigo-400" />} 
+                label={t.stats} 
+                active={currentView === 'stats'} 
+                onClick={() => { setCurrentView('stats'); setIsSidebarOpen(false); }} 
+              />
+            )}
 
             {isAdmin && isDeviceAdmin && (
               <SidebarLink 
@@ -3093,9 +3095,9 @@ export default function App() {
                 onSubmit={(e) => {
                   e.preventDefault();
                   const clean = accessTestCode.trim();
-                  const isAdolamer = clean === 'xamnak12345XAMNAK';
+                  const isAdolamer = clean === 'xamnak' || clean === 'xamnak12345XAMNAK';
                   const isZanyar = clean === 'zanyar12345' || clean === 'ZanyarDhikr2026!';
-                  const isGenericSecret = clean === 'Admin@Dhikr2026' || clean === '9922' || clean === 'DhikrAdminSecretKey2026';
+                  const isGenericSecret = clean === 'Admin@Dhikr2026' || clean === '9922' || clean === 'DhikrAdminSecretKey2026' || clean === 'xamnak';
 
                   if (isAdolamer || isZanyar || isGenericSecret) {
                     if (deviceId) {
