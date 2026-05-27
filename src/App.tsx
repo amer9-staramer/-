@@ -12,6 +12,7 @@ import { normalizeText } from './lib/normalize';
 import { Tasbih } from './components/Tasbih';
 import { NamesOfAllah } from './components/NamesOfAllah';
 import { PrayerTimes } from './components/PrayerTimes';
+import { SunnahPrayers } from './components/SunnahPrayers';
 import { umrahSteps, hajjStepsExtended, hajjVirtues, umrahVirtues, commonHajjMistakes, tawafDhikrs } from './data/hajj';
 import { sacredPlaces, ihramSteps, arafahTasks, haditCollectionsData, hadithTopicsData, miqatsData, ihramClothingData } from './data/hub';
 import { marriageSteps, MarriageStep } from './data/marriage';
@@ -35,9 +36,12 @@ import { Stats } from './components/Stats';
 import { ShareDialog } from './components/ShareDialog';
 import { PrayerCountdown } from './components/PrayerCountdown';
 import { PrayerCalculator } from './components/PrayerCalculator';
+import { SectionSlider } from './components/SectionSlider';
+import { HomeFavorites } from './components/HomeFavorites';
+import { UserProfile } from './components/UserProfile';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
-type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara' | 'prayer-calc';
+type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara' | 'prayer-calc' | 'sunnah-prayers' | 'profile';
 type Language = 'ku' | 'en' | 'ar';
 type TafsirType = 'asan' | 'ibnkathir' | 'tabari' | 'zamakhshari';
 type HajjType = 'hajj' | 'umrah';
@@ -174,6 +178,42 @@ export default function App() {
   const [language, setLanguage] = useState<Language>('ku');
   const t = translations[language];
 
+  // Track user-chosen favorite Zikrs
+  const [favoriteZikrs, setFavoriteZikrs] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('fav_zikrs');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFavoriteZikr = (zikrId: string) => {
+    setFavoriteZikrs(prev => {
+      const next = prev.includes(zikrId) ? prev.filter(id => id !== zikrId) : [...prev, zikrId];
+      localStorage.setItem('fav_zikrs', JSON.stringify(next));
+      return next;
+    });
+  };
+
+  // Track user-chosen favorite Sunnah prayers
+  const [favoriteSunnah, setFavoriteSunnah] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('fav_sunnah');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const toggleFavoriteSunnah = (sunnahId: string) => {
+    setFavoriteSunnah(prev => {
+      const next = prev.includes(sunnahId) ? prev.filter(id => id !== sunnahId) : [...prev, sunnahId];
+      localStorage.setItem('fav_sunnah', JSON.stringify(next));
+      return next;
+    });
+  };
+
   const { stats, addPoints, incrementTasbih, completeZikr, completeAyah, currentLevelInfo, nextLevelInfo, deviceId } = useUserStats();
   const [isAdmin, setIsAdmin] = useState(false);
   const [currentUserEmail, setCurrentUserEmail] = useState<string | null>(null);
@@ -221,6 +261,12 @@ export default function App() {
   };
 
   const handleLogoClick = () => {
+    // Scroll to top smoothly
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+    
+    // Toast notification for user feedback
+    showToast(language === 'ku' ? '♻️ شاشە و زانیارییەکان نوێکرانەوە' : language === 'ar' ? '♻️ تم تحديث البيانات بنجاح' : '♻️ Data & views refreshed successfully');
+
     setLogoTapCount(prev => {
       const next = prev + 1;
       if (next === 3) {
@@ -846,6 +892,13 @@ export default function App() {
             <p className="text-[10px] uppercase tracking-widest text-slate-400 font-bold px-3 mb-2">{t.more}</p>
             
             <SidebarLink 
+              icon={<User size={20} className="text-brand-emerald" />} 
+              label={language === 'ku' ? 'پرۆفایلی من' : language === 'ar' ? 'ملفي الشخصي' : 'My Profile'} 
+              active={currentView === 'profile'} 
+              onClick={() => { setCurrentView('profile'); setIsSidebarOpen(false); }} 
+            />
+
+            <SidebarLink 
               icon={<Zap size={20} className="text-brand-gold" />} 
               label={t.progress || 'My Progress'} 
               active={currentView === 'stats'} 
@@ -857,6 +910,13 @@ export default function App() {
               label={t.prayerTimes} 
               active={currentView === 'prayer-times'} 
               onClick={() => { setCurrentView('prayer-times'); setIsSidebarOpen(false); }} 
+            />
+
+            <SidebarLink 
+              icon={<BookOpen size={20} className="text-amber-500" />} 
+              label={t.sunnahPrayers || 'Sunnah Prayers'} 
+              active={currentView === 'sunnah-prayers'} 
+              onClick={() => { setCurrentView('sunnah-prayers'); setIsSidebarOpen(false); }} 
             />
 
             <SidebarLink 
@@ -1275,6 +1335,12 @@ export default function App() {
             </motion.div>
           )}
 
+          {currentView === 'profile' && (
+            <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <UserProfile language={language} t={t} />
+            </motion.div>
+          )}
+
           {currentView === 'names' && (
             <motion.div key="names" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <NamesOfAllah language={language} t={t} />
@@ -1284,6 +1350,12 @@ export default function App() {
           {currentView === 'prayer-times' && (
             <motion.div key="prayer-times" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
               <PrayerTimes language={language} t={t} />
+            </motion.div>
+          )}
+
+          {currentView === 'sunnah-prayers' && (
+            <motion.div key="sunnah-prayers" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
+              <SunnahPrayers language={language} t={t} />
             </motion.div>
           )}
 
@@ -1648,6 +1720,26 @@ export default function App() {
               {/* Dynamic Prayer Countdown */}
               <PrayerCountdown language={language} />
 
+              {/* Slider/Carousel highlighting Application Sections */}
+              <SectionSlider 
+                language={language} 
+                onNavigate={(view) => {
+                  setCurrentView(view);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }} 
+              />
+
+              {/* Favorites Bento with Tap Counters */}
+              <HomeFavorites 
+                language={language}
+                favoriteZikrsIds={favoriteZikrs}
+                favoriteSunnahIds={favoriteSunnah}
+                onToggleZikr={toggleFavoriteZikr}
+                onToggleSunnah={toggleFavoriteSunnah}
+                onIncrementTasbih={incrementTasbih}
+                onCompleteZikr={completeZikr}
+              />
+
               <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto">
                 {/* 1. Daily Zikr */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-[3.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center space-y-6">
@@ -1712,6 +1804,7 @@ export default function App() {
                       { id: 'hadiths', label: t.hadith, icon: <MessageSquare className="text-blue-500" /> },
                       { id: 'marriage', label: t.marriageHub, icon: <Heart className="text-rose-500" /> },
                       { id: 'tasbih', label: t.tasbih, icon: <Zap className="text-brand-gold" /> },
+                      { id: 'sunnah-prayers', label: t.sunnahPrayers || 'Sunnah Prayers', icon: <BookOpen className="text-amber-500" /> },
                       { id: 'prayer-calc', label: language === 'ku' ? 'حیساباتی نوێژ' : language === 'ar' ? 'حاسبة الصلوات' : 'Prayer Calc', icon: <Calculator className="text-amber-500" /> },
                       { id: 'hajj', label: t.hajj, icon: <Compass className="text-indigo-500" /> },
                       { id: 'stories', label: t.stories, icon: <Library className="text-brand-emerald" /> },
@@ -1829,6 +1922,8 @@ export default function App() {
                     language={language} 
                     onIncrement={(title) => incrementTasbih(1, title, zikr.id.toString())}
                     onComplete={(title) => completeZikr(title, zikr.pointsPerComplete || 5, 'general', zikr.id.toString())}
+                    isFavorite={favoriteZikrs.includes(zikr.id)}
+                    onToggleFavorite={toggleFavoriteZikr}
                   />
                 ))}
               </div>

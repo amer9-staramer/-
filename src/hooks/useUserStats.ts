@@ -85,17 +85,25 @@ export function useUserStats() {
   });
 
   const [userId, setUserId] = useState<string | null>(null);
+  const [isAnonymousUser, setIsAnonymousUser] = useState<boolean>(true);
+
+  // Compute syncId dynamically: if signed in with real email, use the authenticated user ID; otherwise, fallback to deviceId
+  const syncId = userId && !isAnonymousUser ? userId : deviceId;
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUserId(user.uid);
-        syncWithFirestore();
+        setIsAnonymousUser(user.isAnonymous);
       } else {
         setUserId(null);
+        setIsAnonymousUser(true);
         // Automatically sign in anonymously so every device gets a unique ID and can talk to Firestore securely
         signInAnonymously(auth).then((cred) => {
-          if (cred.user) setUserId(cred.user.uid);
+          if (cred.user) {
+            setUserId(cred.user.uid);
+            setIsAnonymousUser(cred.user.isAnonymous);
+          }
         }).catch((err) => {
           console.warn("Silent anonymous authentication failed (may be disabled in console):", err);
         });
@@ -105,15 +113,15 @@ export function useUserStats() {
   }, []);
 
   const syncWithFirestore = async () => {
-    if (!deviceId) return;
+    if (!syncId) return;
     try {
-      const userDoc = await getDoc(doc(db, 'users', deviceId));
+      const userDoc = await getDoc(doc(db, 'users', syncId));
       const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
       const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
 
       const defaultPayload = {
         ...stats,
-        deviceId: deviceId,
+        deviceId: deviceId, // keep original device tracker
         totalDhikrs: totalDhikrs,
         currentLevel: currentLevel,
         lastActive: new Date().toISOString(),
@@ -123,6 +131,7 @@ export function useUserStats() {
 
       if (userDoc.exists()) {
         const firestoreData = userDoc.data() as any;
+        // Merge strategy: if Cloud has higher stats (or is the cloud-restored account), pull it. Otherwise sync local newest.
         if (firestoreData.points > stats.points) {
           setStats(prev => ({
             ...prev,
@@ -130,31 +139,40 @@ export function useUserStats() {
             history: firestoreData.history || prev.history || []
           }));
         } else {
-          await setDoc(doc(db, 'users', deviceId), defaultPayload, { merge: true });
+          await setDoc(doc(db, 'users', syncId), defaultPayload, { merge: true });
         }
       } else {
-        // Increment global device counts
-        const globalRef = doc(db, 'global_stats', 'main');
-        await setDoc(globalRef, {
-          deviceCount: increment(1)
-        }, { merge: true }).catch((e) => console.warn("Failed to increment deviceCount:", e));
+        // Increment global device counts if guest
+        if (syncId === deviceId) {
+          const globalRef = doc(db, 'global_stats', 'main');
+          await setDoc(globalRef, {
+            deviceCount: increment(1)
+          }, { merge: true }).catch((e) => console.warn("Failed to increment deviceCount:", e));
+        }
 
-        await setDoc(doc(db, 'users', deviceId), defaultPayload);
+        await setDoc(doc(db, 'users', syncId), defaultPayload);
       }
     } catch (err) {
       console.warn("Firestore syncing failed (offline or unauthenticated):", err);
     }
   };
 
+  // Sync when syncId or auth changes
+  useEffect(() => {
+    if (syncId) {
+      syncWithFirestore();
+    }
+  }, [syncId]);
+
   useEffect(() => {
     localStorage.setItem('user_stats', JSON.stringify(stats));
-    if (deviceId) {
+    if (syncId) {
       const updateRef = async () => {
         try {
           const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
           const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
 
-          await setDoc(doc(db, 'users', deviceId), {
+          await setDoc(doc(db, 'users', syncId), {
             ...stats,
             deviceId: deviceId,
             totalDhikrs: totalDhikrs,
@@ -169,15 +187,15 @@ export function useUserStats() {
       };
       updateRef();
     }
-  }, [stats, deviceId]);
+  }, [stats, syncId, deviceId]);
 
   // Presence logic: mark online on mount, and offline on unmount or invisibility
   useEffect(() => {
-    if (!deviceId) return;
+    if (!syncId) return;
 
     const markOnline = async () => {
       try {
-        await setDoc(doc(db, 'users', deviceId), {
+        await setDoc(doc(db, 'users', syncId), {
           status: 'online',
           lastActive: new Date().toISOString()
         }, { merge: true });
@@ -188,7 +206,7 @@ export function useUserStats() {
 
     const markOffline = async () => {
       try {
-        await setDoc(doc(db, 'users', deviceId), {
+        await setDoc(doc(db, 'users', syncId), {
           status: 'offline',
           lastActive: new Date().toISOString()
         }, { merge: true });
@@ -471,6 +489,9 @@ export function useUserStats() {
     sendFeedback,
     LEVELS,
     deviceId,
-    userId
+    userId,
+    isAnonymousUser,
+    syncId,
+    syncWithFirestore
   };
 }

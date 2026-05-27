@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { RotateCcw, Share2 } from 'lucide-react';
+import { RotateCcw, Share2, Heart } from 'lucide-react';
 import { Zikr } from '../data/zikrs';
 import { translations } from '../data/translations';
 import { doc, getDoc, setDoc, updateDoc, increment as firestoreIncrement } from 'firebase/firestore';
@@ -11,9 +11,11 @@ export interface ZikrCardProps {
   language: 'ku' | 'en' | 'ar';
   onComplete?: (zikrTitle: string) => void;
   onIncrement?: (zikrTitle: string) => void;
+  isFavorite?: boolean;
+  onToggleFavorite?: (zikrId: string) => void;
 }
 
-export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardProps) => {
+export const ZikrCard = ({ zikr, language, onComplete, onIncrement, isFavorite, onToggleFavorite }: ZikrCardProps) => {
   const [currentCount, setCurrentCount] = useState(0);
   const t = translations[language];
 
@@ -107,6 +109,26 @@ export const ZikrCard = ({ zikr, language, onComplete, onIncrement }: ZikrCardPr
           <Share2 size={15} />
         </button>
       </div>
+
+      {/* Favorite Button */}
+      {onToggleFavorite && (
+        <div className="absolute top-4 right-4 z-20">
+          <button
+            onClick={(e) => {
+              e.stopPropagation();
+              onToggleFavorite(zikr.id);
+            }}
+            title={language === 'ku' ? 'بەپسندکردن / لابردن' : language === 'ar' ? 'إضافة/إزالة المفضلة' : 'Toggle Favorite'}
+            className={`p-2.5 rounded-full border-2 transition-all active:scale-95 flex items-center justify-center shadow-sm ${
+              isFavorite
+                ? 'bg-rose-50 dark:bg-rose-950/30 text-rose-500 border-rose-100 dark:border-rose-900/50'
+                : 'bg-slate-50 dark:bg-slate-800/80 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 dark:hover:bg-rose-950/20 border-slate-100 dark:border-slate-700/50 hover:border-rose-300'
+            }`}
+          >
+            <Heart size={15} className={isFavorite ? 'fill-rose-500 text-rose-500 animate-pulse' : ''} />
+          </button>
+        </div>
+      )}
 
 
 

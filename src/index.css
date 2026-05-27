@@ -14,10 +14,12 @@
 @layer base {
   html {
     font-size: 13px;
+    overscroll-behavior-y: contain;
   }
   body {
     @apply font-kurdish bg-brand-cream text-slate-900 overflow-x-hidden;
     direction: rtl;
+    overscroll-behavior-y: contain;
   }
 }
 
