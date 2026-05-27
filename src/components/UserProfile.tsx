@@ -601,6 +601,23 @@ export function UserProfile({
                   <p className="text-xs font-bold text-slate-400">
                     {language === 'ku' ? 'ئەندام لە کاتی دامەزراندنەوە' : language === 'ar' ? 'التحق بالتطبيق كعاشق مسجل' : 'Spiritual Journey Seeker'}
                   </p>
+
+                  {/* Offline/Online Freedom Status Badges */}
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
+                    {(!auth.currentUser || isAnonymousUser) ? (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-black bg-slate-100 dark:bg-slate-950/60 text-slate-500 rounded-full px-3 py-1 border border-slate-200/50 dark:border-slate-800">
+                        <span className="w-1.5 h-1.5 rounded-full bg-slate-400 animate-ping" />
+                        <Unlock size={11} />
+                        {language === 'ku' ? 'مێوانی ئۆفلاین (بێ ئیمەیڵ)' : language === 'ar' ? 'حساب زائر محلي' : 'Local Guest (Unlinked)'}
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1.5 text-[10px] font-black bg-emerald-50 dark:bg-emerald-950/40 text-brand-emerald rounded-full px-3 py-1 border border-emerald-100 dark:border-emerald-900/30">
+                        <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                        <Lock size={11} className="text-brand-emerald" />
+                        {language === 'ku' ? 'پارێزراوە لە کلاود' : language === 'ar' ? 'مؤمن سحابياً' : 'Protected on Cloud'}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Level / XP System */}
@@ -660,6 +677,37 @@ export function UserProfile({
                   </div>
                 </div>
               </div>
+            </div>
+
+            {/* User Account Freedom Notification Banner */}
+            <div className="bg-gradient-to-br from-indigo-50/70 via-emerald-50/30 to-white dark:from-slate-900/60 dark:via-emerald-950/10 dark:to-slate-900 border border-slate-150 dark:border-slate-800/85 p-6 rounded-[2.5rem] relative overflow-hidden shadow-sm flex flex-col md:flex-row items-center gap-5">
+              <span className="absolute -left-12 -top-12 w-28 h-28 rounded-full bg-indigo-500/10 dark:bg-indigo-400/5 blur-2xl pointer-events-none" />
+              <div className="w-12 h-12 rounded-2xl bg-indigo-500/10 text-indigo-500 flex items-center justify-center shrink-0">
+                <Sparkles size={20} className="text-brand-emerald animate-pulse" />
+              </div>
+              <div className="flex-1 space-y-1 text-center md:text-right">
+                <h4 className="text-sm font-black text-slate-800 dark:text-slate-100">
+                  {language === 'ku' 
+                    ? 'تۆ بە تەواوی ئازادیت لێرە! ✨' 
+                    : language === 'ar'
+                    ? 'أنت حر بالكامل هنا! ✨'
+                    : 'You are completely free here! ✨'}
+                </h4>
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed max-w-2xl">
+                  {language === 'ku'
+                    ? 'دەتوانیت بە تەواوی بەبێ ئیمەیڵ پێشکەوتنەکانت، ناوت، وێنە کارتۆنییە ڕازاوەکان و ئامانجی ڕۆژانە بە شێوەیەکی ئاڕاستەکراو دەستکاری بکەیت. بەڵام گەر حەزت لێ بێت پێشکەوتنە بێ هاوتاکانت بمێنێتەوە و نەفەوتێت، هەر کاتێک بتەوێت دەتوانیت ئیمەیڵێک ببەستیتەوە لە بەشی "هەژمار و هاوکاتی کلاود".'
+                    : language === 'ar'
+                    ? 'يمكنك تعديل اسمك، واختيار رمز كرتوني رائع، وتحديد هدفك اليومي بالكامل أوفلاين دون أي قيود أو حاجة لحساب! للاطمئنان وحماية مستواك ونقاطك من الضياع، تذكر أنه يمكنك ربط بريدك الإلكتروني متى شئت في تبويب "الحساب والمزامنة".'
+                    : 'Customize your name, select gorgeous cartoon avatars, and manage targets 100% offline. To safeguard your cumulative levels and XP forever, link your secure email anytime in the "Cloud Sync & Account" tab.'}
+                </p>
+              </div>
+              <button 
+                type="button"
+                onClick={() => setActiveTab('sync')}
+                className="px-4 py-2.5 bg-slate-900 dark:bg-white text-white dark:text-slate-950 rounded-2xl font-black text-xs hover:scale-103 active:scale-95 transition-all text-center shrink-0 shadow-sm"
+              >
+                {language === 'ku' ? 'هاوکاتی لەگەڵ ئیمەیڵ' : language === 'ar' ? 'ربط الحساب' : 'Manage Account'}
+              </button>
             </div>
 
             {/* Quick Profile Target Goal Setting Slider */}
