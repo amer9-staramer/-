@@ -16,13 +16,29 @@ import {
   onAuthStateChanged
 } from 'firebase/auth';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { HomeFavorites } from './HomeFavorites';
 
 interface UserProfileProps {
   language: 'ku' | 'ar' | 'en';
   t: any;
+  favoriteZikrsIds: string[];
+  favoriteSunnahIds: string[];
+  onToggleZikr: (id: string) => void;
+  onToggleSunnah: (id: string) => void;
+  onIncrementTasbih: (count: number, title: string, id: string) => void;
+  onCompleteZikr: (title: string, points: number, category: string, id: string) => void;
 }
 
-export function UserProfile({ language, t }: UserProfileProps) {
+export function UserProfile({ 
+  language, 
+  t,
+  favoriteZikrsIds,
+  favoriteSunnahIds,
+  onToggleZikr,
+  onToggleSunnah,
+  onIncrementTasbih,
+  onCompleteZikr
+}: UserProfileProps) {
   // 1. Personal Info in LocalStorage
   const [profileName, setProfileName] = useState<string>(() => {
     return localStorage.getItem('profile_name') || (language === 'ku' ? 'بەکارھێنەر' : language === 'ar' ? 'مستخدم زيكر' : 'Zikr User');
@@ -50,7 +66,7 @@ export function UserProfile({ language, t }: UserProfileProps) {
     syncWithFirestore 
   } = useUserStats();
 
-  const [activeTab, setActiveTab] = useState<'profile' | 'sync'>('profile');
+  const [activeTab, setActiveTab] = useState<'profile' | 'favorites' | 'sync'>('profile');
 
   // Load existing stats dynamically from our hook for continuous real-time rendering
   const userStatsLocal = stats;
@@ -128,12 +144,16 @@ export function UserProfile({ language, t }: UserProfileProps) {
     }
   ];
 
-  // Preset spiritual avatars for fallback or quick assign
+  // Preset spiritual avatars for fallback or quick assign - 3D cartoon anime style
   const avatarPresets = [
-    'https://images.unsplash.com/photo-1544005313-94ddf0286df2?auto=format&fit=crop&q=80&w=200',
-    'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-    'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
-    'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&q=80&w=200'
+    { url: '/src/assets/images/avatar_man_1_1779920017633.png', label: { ku: 'گورجی گەنج', ar: 'شاب نشيط', en: 'Young Active' } },
+    { url: '/src/assets/images/avatar_man_2_1779920036465.png', label: { ku: 'شیخ و وێنە', ar: 'شيخ وقور', en: 'Venerable Elder' } },
+    { url: '/src/assets/images/avatar_woman_1_1779920054100.png', label: { ku: 'کچی پاک', ar: 'فتاة خاشعة', en: 'Young Devoted' } },
+    { url: '/src/assets/images/avatar_woman_2_1779920070280.png', label: { ku: 'باڵاپۆش', ar: 'سيدة محجبة', en: 'Hijabi Lady' } },
+    { url: '/src/assets/images/avatar_boy_1_1779920091213.png', label: { ku: 'منداڵ', ar: 'طفل صغير', en: 'Little Boy' } },
+    { url: '/src/assets/images/avatar_boy_2_1779920108812.png', label: { ku: 'لاو', ar: 'شاب فتي', en: 'Teen Boy' } },
+    { url: '/src/assets/images/avatar_girl_1_1779920125395.png', label: { ku: 'بچکۆلە', ar: 'طفلة محجبة', en: 'Little Girl' } },
+    { url: '/src/assets/images/avatar_girl_2_1779920141256.png', label: { ku: 'کچ', ar: 'فتاة محجبة', en: 'Teen Girl' } }
   ];
 
   // Weekly activity analytical data for charting
@@ -283,7 +303,10 @@ export function UserProfile({ language, t }: UserProfileProps) {
             currentLevel,
             lastActive: new Date().toISOString(),
             status: 'online',
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            profileName,
+            profileImage,
+            dailyGoal
           }, { merge: true });
 
           setAuthSuccess(language === 'ku' ? '✅ هەژمارەکەت دروستکرا و نوێترین چالاکییەکانت بە سەرکەوتوویی پاشەکەوت کران!' : language === 'ar' ? '✅ تم إنشاء الحساب وربط داتا الأذكار بنجاح!' : '✅ Account created and linked successfully!');
@@ -297,8 +320,11 @@ export function UserProfile({ language, t }: UserProfileProps) {
           // Restore stats from Firestore
           const userDoc = await getDoc(doc(db, 'users', cred.user.uid));
           if (userDoc.exists()) {
-            const remoteData = userDoc.data();
+            const remoteData = userDoc.data() as any;
             localStorage.setItem('user_stats', JSON.stringify(remoteData));
+            if (remoteData.profileName) localStorage.setItem('profile_name', remoteData.profileName);
+            if (remoteData.profileImage !== undefined) localStorage.setItem('profile_image', remoteData.profileImage);
+            if (remoteData.dailyGoal) localStorage.setItem('profile_daily_goal', remoteData.dailyGoal.toString());
             // Trigger actual refresh or state merge
             window.location.reload();
           } else {
@@ -312,7 +338,10 @@ export function UserProfile({ language, t }: UserProfileProps) {
               currentLevel,
               lastActive: new Date().toISOString(),
               status: 'online',
-              updatedAt: new Date().toISOString()
+              updatedAt: new Date().toISOString(),
+              profileName,
+              profileImage,
+              dailyGoal
             });
             setAuthSuccess(language === 'ku' ? '✅ چوونەژوورەوە سەرکەوتوو بوو. هیچ زانیارییەک پێشتر لەسەر کلاود فۆرمات نەکرابوو، چالاکییە لۆکاڵییەکانت بۆ کلاود گواسترانەوە.' : language === 'ar' ? '✅ تسجيل الدخول ناجح! تم نقل إحصاءياتك أوفلاين وسنبداً بمزامنتها تلقائياً.' : '✅ Logged in successfully! Created new cloud backup.');
           }
@@ -359,7 +388,11 @@ export function UserProfile({ language, t }: UserProfileProps) {
     try {
       const userDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
       if (userDoc.exists()) {
-        localStorage.setItem('user_stats', JSON.stringify(userDoc.data()));
+        const remoteData = userDoc.data() as any;
+        localStorage.setItem('user_stats', JSON.stringify(remoteData));
+        if (remoteData.profileName) localStorage.setItem('profile_name', remoteData.profileName);
+        if (remoteData.profileImage !== undefined) localStorage.setItem('profile_image', remoteData.profileImage);
+        if (remoteData.dailyGoal) localStorage.setItem('profile_daily_goal', remoteData.dailyGoal.toString());
         window.location.reload();
       } else {
         setAuthError(language === 'ku' ? 'هیچ زانیارییەک لەسەر کلاود نییە بۆ ئەم هەژمارە.' : language === 'ar' ? 'لم يتم العثور على أي داتا على الكلاود لهذا الحساب.' : 'No cloud backup found for this account.');
@@ -416,6 +449,7 @@ export function UserProfile({ language, t }: UserProfileProps) {
     subtitle: { ku: 'کۆنترۆڵی سەرجەم چالاکییەکان و زانیارییەکانی خۆت بکە بە تەواوی لۆکاڵ.', ar: 'متابعة تفصيلية لنشاطاتك اليومية ومستواك الدائم أوفلاين.', en: 'Take full control of your offline spiritual footprint.' },
     goals: { ku: 'ڕێکخستنی ئامانجی ڕۆژانە', ar: 'تحديد الهدف اليومي (نقاط)', en: 'Daily Activity Target Goal' },
     personalTab: { ku: 'پڕۆفایلی من', ar: 'حسابي', en: 'My Account' },
+    favoritesTab: { ku: 'دڵخوازەکان', ar: 'المفضلة', en: 'Favorites' },
     notesTab: { ku: 'تێبینییەکان', ar: 'ملاحظاتي', en: 'Personal Notes' },
     syncTab: { ku: 'هەژمار و هاوکاتی کلاود', ar: 'الحساب والمزامنة السحابية', en: 'Cloud Sync & Account' },
     points: { ku: 'خاڵەکانی ئاست (XP)', ar: 'نقاط الخبرة الكلية', en: 'Spiritual Level Points (XP)' },
@@ -441,7 +475,7 @@ export function UserProfile({ language, t }: UserProfileProps) {
         </p>
 
         {/* Tab Selection Row */}
-        <div className="flex bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 p-1 rounded-2xl max-w-md mx-auto mt-6">
+        <div className="flex bg-slate-100 dark:bg-slate-900 border border-slate-200/50 dark:border-slate-800 p-1 rounded-2xl max-w-lg mx-auto mt-6">
           <button
             onClick={() => setActiveTab('profile')}
             className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
@@ -451,6 +485,17 @@ export function UserProfile({ language, t }: UserProfileProps) {
             }`}
           >
             {langTerms.personalTab[language]}
+          </button>
+
+          <button
+            onClick={() => setActiveTab('favorites')}
+            className={`flex-1 py-2.5 rounded-xl text-xs font-black transition-all ${
+              activeTab === 'favorites'
+                ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-white shadow-sm'
+                : 'text-slate-400 dark:text-slate-500 hover:text-slate-600'
+            }`}
+          >
+            {langTerms.favoritesTab[language]}
           </button>
 
           <button
@@ -510,8 +555,8 @@ export function UserProfile({ language, t }: UserProfileProps) {
                   {profileImage ? (
                     <img src={profileImage} alt="User Profile Picture" className="w-full h-full object-cover" />
                   ) : (
-                    <div className="w-full h-full flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/40 text-brand-emerald">
-                      <User size={44} />
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-emerald to-teal-600 text-white font-black text-3xl select-none">
+                      {profileName ? profileName.trim().charAt(0).toUpperCase() : <User size={36} />}
                     </div>
                   )}
 
@@ -580,22 +625,36 @@ export function UserProfile({ language, t }: UserProfileProps) {
                 </div>
 
                 {/* Preset quick avatars list if gallery upload is not preferred */}
-                <div className="space-y-1.5 text-center md:text-right">
+                <div className="space-y-2 text-center md:text-right w-full">
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">
-                    {language === 'ku' ? 'یان وێنەیەکی ئامادەکراو هەڵبژێرە:' : language === 'ar' ? 'أو اختر صوراً روحية جاهزة:' : 'Or choose preset spiritual avatars:'}
+                    {language === 'ku' ? 'وێنەیەکی کارتۆنی هەڵبژێرە:' : language === 'ar' ? 'اختر رمزاً كرتونياً جاهزاً:' : 'Choose a modern cartoon avatar:'}
                   </span>
-                  <div className="flex items-center justify-center md:justify-start gap-2">
-                    {avatarPresets.map((img, i) => (
+                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-2 pt-1">
+                    {/* Clear/No Avatar Option */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setProfileImage('');
+                        localStorage.setItem('profile_image', '');
+                      }}
+                      className={`w-9 h-9 rounded-full border flex items-center justify-center text-xs font-black transition-all hover:scale-105 active:scale-95 ${!profileImage ? 'border-brand-emerald bg-emerald-50 dark:bg-emerald-950 text-brand-emerald ring-2 ring-brand-emerald/40' : 'bg-slate-50 dark:bg-slate-800 text-slate-405 border-slate-200'}`}
+                      title={language === 'ku' ? 'بێ وێنە' : language === 'ar' ? 'بدون صورة' : 'No Photo'}
+                    >
+                      <User size={15} />
+                    </button>
+
+                    {avatarPresets.map((preset, i) => (
                       <button
                         key={i}
                         type="button"
                         onClick={() => {
-                          setProfileImage(img);
-                          localStorage.setItem('profile_image', img);
+                          setProfileImage(preset.url);
+                          localStorage.setItem('profile_image', preset.url);
                         }}
-                        className={`w-9 h-9 rounded-full border overflow-hidden hover:scale-105 active:scale-95 transition-all ${profileImage === img ? 'border-brand-emerald ring-2 ring-brand-emerald/40' : 'border-slate-200'}`}
+                        className={`w-9 h-9 rounded-full border overflow-hidden hover:scale-105 active:scale-95 transition-all relative group ${profileImage === preset.url ? 'border-brand-emerald ring-2 ring-brand-emerald/40' : 'border-slate-200 dark:border-slate-850'}`}
+                        title={preset.label[language] || preset.label['en']}
                       >
-                        <img src={img} alt="Preset Avatar Option" className="w-full h-full object-cover" />
+                        <img src={preset.url} alt={preset.label['en']} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                       </button>
                     ))}
                   </div>
@@ -739,6 +798,27 @@ export function UserProfile({ language, t }: UserProfileProps) {
               </div>
             </div>
 
+          </motion.div>
+        )}
+
+        {activeTab === 'favorites' && (
+          <motion.div
+            key="favoritesTab"
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -15 }}
+            className="space-y-6"
+          >
+            <HomeFavorites 
+              language={language}
+              favoriteZikrsIds={favoriteZikrsIds}
+              favoriteSunnahIds={favoriteSunnahIds}
+              onToggleZikr={onToggleZikr}
+              onToggleSunnah={onToggleSunnah}
+              onIncrementTasbih={onIncrementTasbih}
+              onCompleteZikr={onCompleteZikr}
+              showEmptyState={true}
+            />
           </motion.div>
         )}
 

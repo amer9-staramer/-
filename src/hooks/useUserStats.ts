@@ -119,6 +119,11 @@ export function useUserStats() {
       const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
       const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
 
+      const profileName = localStorage.getItem('profile_name') || '';
+      const profileImage = localStorage.getItem('profile_image') || '';
+      const dailyGoalStr = localStorage.getItem('profile_daily_goal') || '100';
+      const dailyGoal = parseInt(dailyGoalStr);
+
       const defaultPayload = {
         ...stats,
         deviceId: deviceId, // keep original device tracker
@@ -126,11 +131,26 @@ export function useUserStats() {
         currentLevel: currentLevel,
         lastActive: new Date().toISOString(),
         status: 'online',
-        updatedAt: new Date().toISOString()
+        updatedAt: new Date().toISOString(),
+        profileName,
+        profileImage,
+        dailyGoal
       };
 
       if (userDoc.exists()) {
         const firestoreData = userDoc.data() as any;
+        
+        // Restore profile attributes to localStorage if they exist
+        if (firestoreData.profileName) {
+          localStorage.setItem('profile_name', firestoreData.profileName);
+        }
+        if (firestoreData.profileImage !== undefined) {
+          localStorage.setItem('profile_image', firestoreData.profileImage);
+        }
+        if (firestoreData.dailyGoal) {
+          localStorage.setItem('profile_daily_goal', firestoreData.dailyGoal.toString());
+        }
+
         // Merge strategy: if Cloud has higher stats (or is the cloud-restored account), pull it. Otherwise sync local newest.
         if (firestoreData.points > stats.points) {
           setStats(prev => ({
@@ -171,6 +191,10 @@ export function useUserStats() {
         try {
           const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
           const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
+          const profileName = localStorage.getItem('profile_name') || '';
+          const profileImage = localStorage.getItem('profile_image') || '';
+          const dailyGoalStr = localStorage.getItem('profile_daily_goal') || '100';
+          const dailyGoal = parseInt(dailyGoalStr);
 
           await setDoc(doc(db, 'users', syncId), {
             ...stats,
@@ -179,7 +203,10 @@ export function useUserStats() {
             currentLevel: currentLevel,
             lastActive: new Date().toISOString(),
             status: 'online',
-            updatedAt: new Date().toISOString()
+            updatedAt: new Date().toISOString(),
+            profileName,
+            profileImage,
+            dailyGoal
           }, { merge: true });
         } catch (err) {
           console.warn("Firestore save failed (offline or unauthenticated):", err);

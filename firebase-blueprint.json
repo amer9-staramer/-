@@ -15,7 +15,10 @@
         "totalDhikrs": { "type": "number" },
         "currentLevel": { "type": "number" },
         "lastActive": { "type": "string", "format": "date-time" },
-        "status": { "type": "string" }
+        "status": { "type": "string" },
+        "profileName": { "type": "string" },
+        "profileImage": { "type": "string" },
+        "dailyGoal": { "type": "number" }
       },
       "required": ["points", "level", "dailyZikrsCompleted", "totalTasbihCount", "badges", "updatedAt"]
     },

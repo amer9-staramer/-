@@ -12,6 +12,7 @@ interface HomeFavoritesProps {
   onToggleSunnah: (id: string) => void;
   onIncrementTasbih: (count: number, title: string, id: string) => void;
   onCompleteZikr: (title: string, points: number, category: string, id: string) => void;
+  showEmptyState?: boolean;
 }
 
 export function HomeFavorites({
@@ -21,7 +22,8 @@ export function HomeFavorites({
   onToggleZikr,
   onToggleSunnah,
   onIncrementTasbih,
-  onCompleteZikr
+  onCompleteZikr,
+  showEmptyState = false
 }: HomeFavoritesProps) {
   // Local state for tracking Zikr clicks made inside favorites
   const [zikrCounts, setZikrCounts] = useState<{ [id: string]: number }>({});
@@ -55,7 +57,7 @@ export function HomeFavorites({
       onIncrementTasbih(1, text, id);
       
       if (nextCount === targetCount) {
-        onCompleteZikr(text, 5, 'general', id);
+         onCompleteZikr(text, 5, 'general', id);
       }
       
       // Increment total count in localStorage for stats
@@ -73,6 +75,27 @@ export function HomeFavorites({
   const favSunnahList = sunnahPrayersData.sunnah_prayers.filter(sp => favoriteSunnahIds.includes(sp.id));
 
   if (favZikrList.length === 0 && favSunnahList.length === 0) {
+    if (showEmptyState) {
+      return (
+        <div className="flex flex-col items-center justify-center text-center p-8 space-y-4 bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 rounded-[2.5rem] shadow-sm max-w-md mx-auto my-6" dir={language === 'en' ? 'ltr' : 'rtl'}>
+          <div className="w-16 h-16 rounded-full bg-rose-50 dark:bg-rose-950/20 text-rose-500 flex items-center justify-center">
+            <Heart size={30} className="fill-rose-500 text-rose-500" />
+          </div>
+          <div className="space-y-1.5 md:space-y-2">
+            <h4 className="text-base font-black text-slate-800 dark:text-white">
+              {language === 'ku' ? 'لیستی دڵخوازەکانت بەتاڵە' : language === 'ar' ? 'قائمتك المفضلة فارغة' : 'Your Favorites List is Empty'}
+            </h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed font-bold">
+              {language === 'ku' 
+                ? 'دەتوانیت هەر زیکرێک یان نوێژێکی سونەت کە حەزت پێیەتی بە داگرتنی دوگمەی دڵخوازی (دڵ) کۆی بکەیتەوە لێرە.'
+                : language === 'ar'
+                ? 'يمكنك إضافة أي من الأذكار والسنن التي تفضلها بالضغط على زر القلب لحفظها والوصول السريع إليها هنا.'
+                : 'Save any dhikr or voluntary prayer by tapping the heart icon in their respective cards to display them here.'}
+            </p>
+          </div>
+        </div>
+      );
+    }
     return null; // Don't block screen space with empty card
   }
 

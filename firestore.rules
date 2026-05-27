@@ -35,7 +35,10 @@ service cloud.firestore {
              (!('lastActive' in data) || data.lastActive is string) &&
              (!('status' in data) || data.status is string) &&
              (!('history' in data) || data.history is list) &&
-             (!('totalAyahsRead' in data) || data.totalAyahsRead is number);
+             (!('totalAyahsRead' in data) || data.totalAyahsRead is number) &&
+             (!('profileName' in data) || data.profileName is string) &&
+             (!('profileImage' in data) || data.profileImage is string) &&
+             (!('dailyGoal' in data) || data.dailyGoal is number);
     }
 
     function isValidZikrStat(data) {

@@ -39,6 +39,8 @@ import { PrayerCalculator } from './components/PrayerCalculator';
 import { SectionSlider } from './components/SectionSlider';
 import { HomeFavorites } from './components/HomeFavorites';
 import { UserProfile } from './components/UserProfile';
+import { UniversalSearch } from './components/UniversalSearch';
+import { DailyReminders } from './components/DailyReminders';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
 type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara' | 'prayer-calc' | 'sunnah-prayers' | 'profile';
@@ -428,6 +430,7 @@ export default function App() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [currentView, setCurrentView] = useState<View>('home');
+  const [isGlobalSearchOpen, setIsGlobalSearchOpen] = useState(false);
 
   // Shared Share Dialog states
   const [isShareOpen, setIsShareOpen] = useState(false);
@@ -487,6 +490,50 @@ export default function App() {
       }
     }
   }, [isAdmin, currentView, isDeviceAdmin, language]);
+
+  const handleGlobalNavigate = (view: View, params?: any) => {
+    if (view === 'quran') {
+      setCurrentView('quran');
+      if (params?.surah) {
+        setSelectedSurah(params.surah);
+      }
+    } else if (view === 'zikrs') {
+      setCurrentView('zikrs');
+      if (params?.category) {
+        setActiveCategory(params.category as Category);
+      }
+      if (params?.zikrId) {
+        const targetZikr = zikrs.find(z => z.id === params.zikrId);
+        if (targetZikr) {
+          setAdhkarSearchQuery(language === 'en' ? targetZikr.translationEn : targetZikr.translationKu);
+        }
+      }
+    } else if (view === 'names') {
+      setCurrentView('names');
+    } else if (view === 'hadith') {
+      setCurrentView('hadith');
+      if (params?.hadithId) {
+        const targetHadith = hadiths.find(h => h.id === params.hadithId);
+        if (targetHadith && targetHadith.collection) {
+          setSelectedHadithCollection(targetHadith.collection as any);
+        }
+      }
+    } else {
+      setCurrentView(view);
+    }
+  };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+        e.preventDefault();
+        setIsGlobalSearchOpen(prev => !prev);
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   const [sabrFilter, setSabrFilter] = useState<'all' | 'ayah' | 'hadith' | 'story' | 'companion' | 'quote'>('all');
   const [activeTafsir, setActiveTafsir] = useState<TafsirType>('asan');
   const [hajjType, setHajjType] = useState<HajjType>('umrah');
@@ -812,6 +859,13 @@ export default function App() {
             label={t.homeNav} 
             active={currentView === 'home'} 
             onClick={() => { setCurrentView('home'); setIsSidebarOpen(false); }} 
+          />
+
+          <SidebarLink 
+            icon={<Search size={20} className="text-brand-emerald dark:text-brand-gold animate-pulse" />} 
+            label={language === 'ku' ? 'گەڕانی خێرا (Cmd+K)' : language === 'ar' ? 'البحث السريع (Cmd+K)' : 'Quick Search (Cmd+K)'} 
+            active={isGlobalSearchOpen} 
+            onClick={() => { setIsGlobalSearchOpen(true); setIsSidebarOpen(false); }} 
           />
 
           <SidebarLink 
@@ -1196,23 +1250,26 @@ export default function App() {
             
 
             <div className="flex-1 max-w-xs relative group hidden md:block lg:ml-4">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <Search className="text-slate-300 group-focus-within:text-brand-emerald dark:group-focus-within:text-brand-gold transition-colors" size={14} />
-              </div>
-              <input 
-                type="text"
-                value={adhkarSearchQuery}
-                onChange={(e) => {
-                  setAdhkarSearchQuery(e.target.value);
-                  if (currentView !== 'zikrs' && currentView !== 'home') setCurrentView('zikrs');
-                }}
-                placeholder={t.searchAdhkar}
-                className="w-full bg-slate-50 dark:bg-slate-800 border border-slate-100 dark:border-slate-800 rounded-full py-2 pl-9 pr-4 text-xs font-bold outline-none focus:bg-white dark:focus:bg-slate-900 focus:ring-2 focus:ring-brand-emerald/10 focus:border-brand-emerald/30 transition-all dark:text-white"
-              />
+              <button
+                type="button"
+                onClick={() => setIsGlobalSearchOpen(true)}
+                className="w-full flex items-center gap-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-850 border border-slate-100 dark:border-slate-800 rounded-full py-2 px-4 transition-all text-slate-400 font-bold text-left cursor-pointer"
+              >
+                <Search size={14} className="text-slate-400 group-hover:text-brand-emerald dark:group-hover:text-brand-gold transition-colors" />
+                <span className="text-xs">{language === 'ku' ? 'بگەڕێ لە هەموو ئەپەکەدا...' : language === 'ar' ? 'ابحث في كل التطبيق...' : 'Search entire app...'}</span>
+              </button>
             </div>
           </div>
           
-          <div className="w-10"></div>
+          <div>
+            <button 
+              onClick={() => setIsGlobalSearchOpen(true)}
+              className="p-2.5 bg-slate-50 dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-750 border border-slate-100 dark:border-slate-800 text-slate-500 dark:text-slate-300 rounded-xl transition-all hover:scale-105 active:scale-95 flex items-center justify-center cursor-pointer shadow-sm relative group"
+              title={language === 'ku' ? 'گەڕانی گشتی' : language === 'ar' ? 'البحث الشامل' : 'Universal Search'}
+            >
+              <Search size={18} />
+            </button>
+          </div>
         </div>
       </header>
 
@@ -1337,7 +1394,16 @@ export default function App() {
 
           {currentView === 'profile' && (
             <motion.div key="profile" initial={{ opacity: 0 }} animate={{ opacity: 1 }}>
-              <UserProfile language={language} t={t} />
+              <UserProfile 
+                language={language} 
+                t={t} 
+                favoriteZikrsIds={favoriteZikrs}
+                favoriteSunnahIds={favoriteSunnah}
+                onToggleZikr={toggleFavoriteZikr}
+                onToggleSunnah={toggleFavoriteSunnah}
+                onIncrementTasbih={incrementTasbih}
+                onCompleteZikr={completeZikr}
+              />
             </motion.div>
           )}
 
@@ -1729,18 +1795,14 @@ export default function App() {
                 }} 
               />
 
-              {/* Favorites Bento with Tap Counters */}
-              <HomeFavorites 
-                language={language}
-                favoriteZikrsIds={favoriteZikrs}
-                favoriteSunnahIds={favoriteSunnah}
-                onToggleZikr={toggleFavoriteZikr}
-                onToggleSunnah={toggleFavoriteSunnah}
-                onIncrementTasbih={incrementTasbih}
-                onCompleteZikr={completeZikr}
+              <DailyReminders 
+                language={language} 
+                t={t} 
+                favoriteZikrsIds={favoriteZikrs} 
+                onToggleZikr={toggleFavoriteZikr} 
               />
 
-              <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto">
+              <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto hidden">
                 {/* 1. Daily Zikr */}
                 <div className="bg-white dark:bg-slate-900 p-8 rounded-[3.5rem] shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center space-y-6">
                    <div className="w-12 h-12 bg-orange-50 dark:bg-orange-950/30 text-orange-500 rounded-2xl flex items-center justify-center">
@@ -3311,6 +3373,14 @@ export default function App() {
         translation={shareTranslation}
         type={shareType}
         language={language}
+      />
+
+      {/* Premium Multilingual Universal Smart Search Command Palette */}
+      <UniversalSearch
+        isOpen={isGlobalSearchOpen}
+        onClose={() => setIsGlobalSearchOpen(false)}
+        language={language}
+        onNavigate={handleGlobalNavigate}
       />
     </div>
   );
