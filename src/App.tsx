@@ -42,6 +42,7 @@ import { HomeFavorites } from './components/HomeFavorites';
 import { UserProfile } from './components/UserProfile';
 import { UniversalSearch } from './components/UniversalSearch';
 import { DailyReminders } from './components/DailyReminders';
+import { MinuteAyahViewer } from './components/MinuteAyahViewer';
 import { ProtectedRoute } from './components/ProtectedRoute';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
@@ -1811,6 +1812,10 @@ export default function App() {
                 t={t} 
                 favoriteZikrsIds={favoriteZikrs} 
                 onToggleZikr={toggleFavoriteZikr} 
+              />
+
+              <MinuteAyahViewer 
+                language={language}
               />
 
               <div className="grid grid-cols-1 gap-8 max-w-2xl mx-auto hidden">
