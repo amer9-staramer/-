@@ -3188,7 +3188,6 @@ export default function App() {
       <footer className="w-full py-16 px-6 border-t border-slate-100 dark:border-slate-800 mt-12 bg-slate-50/50 dark:bg-slate-900/30">
         <div className="max-w-4xl mx-auto text-center space-y-8">
           <div className="flex flex-col items-center gap-2">
-            <Heart size={24} className="text-rose-500 fill-rose-500/20" />
             <div className="h-px w-24 bg-gradient-to-r from-transparent via-slate-200 dark:via-slate-700 to-transparent"></div>
           </div>
           

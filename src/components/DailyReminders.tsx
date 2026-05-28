@@ -279,12 +279,16 @@ export function DailyReminders({
             <Calendar size={18} />
           </div>
           <div>
-            <h3 className="text-sm font-black text-slate-800 dark:text-white">
-              {language === 'ku' ? 'یادەوەری و یەقینی ئەمڕۆ' : language === 'ar' ? 'نفحات الإيمان والذكر' : "Today's Reminder & Guidance"}
-            </h3>
-            <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
-              {language === 'ku' ? 'بەپێی ڕۆژژمێری ئیسلامی' : language === 'ar' ? 'حسب التقويم الهجري' : 'Aligned with Islamic Calendar'}
-            </p>
+            {language !== 'ku' && (
+              <>
+                <h3 className="text-sm font-black text-slate-800 dark:text-white">
+                  {language === 'ar' ? 'نفحات الإيمان والذكر' : "Today's Reminder & Guidance"}
+                </h3>
+                <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest mt-0.5">
+                  {language === 'ar' ? 'حسب التقويم الهجري' : 'Aligned with Islamic Calendar'}
+                </p>
+              </>
+            )}
           </div>
         </div>
 

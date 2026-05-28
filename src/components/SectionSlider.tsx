@@ -137,7 +137,7 @@ export function SectionSlider({ language, onNavigate }: SectionSliderProps) {
           </div>
           <div className="space-y-1.5">
             <span className="text-[10px] uppercase font-black tracking-widest text-[#d97706] dark:text-brand-gold block">
-              {language === 'ku' ? 'بەشکانی ئەپڵیکەیشن' : language === 'ar' ? 'أقسام التطبيق' : 'Featured Section'}
+              {language === 'ku' ? 'بەشەکانی ئەپڵیکەیشن' : language === 'ar' ? 'أقسام التطبيق' : 'Featured Section'}
             </span>
             <h3 className="text-xl font-black text-slate-800 dark:text-white transition-colors group-hover:text-brand-emerald">
               {current.title[language] || current.title['en']}

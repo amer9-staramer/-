@@ -979,6 +979,131 @@ export function UserProfile({
                     ))}
                   </div>
                 </div>
+
+                {/* Optional Account Creation & Login Inside Profile Tab */}
+                {(!auth.currentUser || isAnonymousUser) ? (
+                  <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800/60 text-center md:text-right space-y-3.5">
+                    <div className="space-y-1">
+                      <span className="text-[10px] font-black text-indigo-500 uppercase tracking-widest block">
+                        {language === 'ku' ? 'دروستکردنی هەژمار (دڵخوازە) 🔑' : language === 'ar' ? 'إنشاء حساب وتأمين داتا الأذكار (اختياري) 🔑' : 'Secure Your Account (Optional) 🔑'}
+                      </span>
+                      <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 leading-relaxed max-w-md mx-auto md:mx-0">
+                        {language === 'ku'
+                          ? 'بەکارهێنەر ئازادە لێرە ئیمەیڵ داخل بکات یان نا. بەڵام پڕکردنەوەی ئەم بەشە پێشکەوتنەکانت بۆ هەمیشە دەپارێزێت.'
+                          : language === 'ar'
+                          ? 'المستخدم حر بالكامل في إدخال البريد الإلكتروني أو كتابة الأذكار بدونه أوفلاين. يرجى توفير بريدك لتأمين مستواك للأبد.'
+                          : 'You are completely free here! Type credentials only to back up your achievements forever across devices.'}
+                      </p>
+                    </div>
+
+                    {/* Mode Tabs Slider inside Profile */}
+                    <div className="flex bg-slate-50 dark:bg-slate-950/80 border border-slate-150 dark:border-slate-850 p-1 rounded-xl max-w-[240px] mx-auto md:mx-0">
+                      <button
+                        type="button"
+                        onClick={() => { setAuthMode('link'); setAuthError(null); setAuthSuccess(null); }}
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                          authMode === 'link'
+                            ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm'
+                            : 'text-slate-400 hover:text-slate-600'
+                        }`}
+                      >
+                        {language === 'ku' ? 'تۆمارکردن' : language === 'ar' ? 'إنشاء حساب' : 'Register'}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => { setAuthMode('signin'); setAuthError(null); setAuthSuccess(null); }}
+                        className={`flex-1 py-1.5 rounded-lg text-[10px] font-black transition-all ${
+                          authMode === 'signin'
+                            ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950 shadow-sm'
+                            : 'text-slate-405 dark:text-slate-500 hover:text-slate-600'
+                        }`}
+                      >
+                        {language === 'ku' ? 'چوونەژوورەوە' : language === 'ar' ? 'تسجيل الدخول' : 'Sign In'}
+                      </button>
+                    </div>
+
+                    {/* Feedback Alerts */}
+                    {authError && (
+                      <div className="p-3 bg-rose-50/50 dark:bg-rose-950/20 border border-rose-500/20 rounded-xl text-[11px] font-bold text-rose-500 text-center">
+                        {authError}
+                      </div>
+                    )}
+                    {authSuccess && (
+                      <div className="p-3 bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-500/20 rounded-xl text-[11px] font-bold text-brand-emerald text-center">
+                        {authSuccess}
+                      </div>
+                    )}
+
+                    {/* Mini Form Inputs */}
+                    <form onSubmit={handleAuthAction} className="space-y-3 text-left">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-wider text-slate-450 block">
+                            {language === 'ku' ? 'ناونیشانی ئیمەیڵ' : language === 'ar' ? 'البريد الإلكتروني' : 'Email Address'}
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="email"
+                              required
+                              placeholder="info@yourdomain.com"
+                              value={email}
+                              onChange={(e) => setEmail(e.target.value)}
+                              className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-emerald/30 focus:border-brand-emerald"
+                            />
+                            <Mail size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          </div>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-[9px] font-black uppercase tracking-wider text-slate-450 block">
+                            {language === 'ku' ? 'تێپەڕەوشە' : language === 'ar' ? 'كلمة المرور' : 'Secure Password'}
+                          </label>
+                          <div className="relative">
+                            <input
+                              type="password"
+                              required
+                              placeholder={language === 'ku' ? '٦ هێما لانی کەم' : '6 characters min'}
+                              value={password}
+                              onChange={(e) => setPassword(e.target.value)}
+                              className="w-full pl-8 pr-3 py-2 bg-slate-50 dark:bg-slate-950/40 border border-slate-150 dark:border-slate-850 rounded-xl text-xs font-bold text-slate-800 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-brand-emerald/30 focus:border-brand-emerald"
+                            />
+                            <Key size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400" />
+                          </div>
+                        </div>
+                      </div>
+
+                      <button
+                        type="submit"
+                        disabled={isAuthLoading}
+                        className="w-full py-2.5 bg-brand-emerald text-white font-black text-xs rounded-xl shadow-sm shadow-brand-emerald/10 flex items-center justify-center gap-1.5 hover:bg-brand-emerald/90 transition-all disabled:opacity-50"
+                      >
+                        {isAuthLoading ? (
+                          <RefreshCw size={12} className="animate-spin" />
+                        ) : (
+                          <Sparkles size={11} />
+                        )}
+                        <span>
+                          {authMode === 'link' 
+                            ? (language === 'ku' ? 'پەیوەستکردنی داتاکان بەم ئیمەیڵە' : language === 'ar' ? 'تأمين الحساب والربط الفوري' : 'Link & Protect Progress')
+                            : (language === 'ku' ? 'چوونەژوورەوە و هێنانی داتاکان' : language === 'ar' ? 'تسجيل الدخول ومزامنة التقدم' : 'Restore Progress & Sign In')}
+                        </span>
+                      </button>
+                    </form>
+                  </div>
+                ) : (
+                  <div className="mt-5 pt-5 border-t border-slate-100 dark:border-slate-800/60 text-center md:text-right">
+                    <div className="inline-flex items-center gap-1.5 text-[10px] font-black text-brand-emerald bg-emerald-50 dark:bg-emerald-950/30 px-3 py-1.5 rounded-xl border border-emerald-100 dark:border-emerald-900/30">
+                      <ShieldCheck size={13} className="shrink-0" />
+                      <span>
+                        {language === 'ku' 
+                          ? `هەژمارەکەت بەستراوەتەوە بە ئیمەیڵی: ${auth.currentUser?.email}` 
+                          : language === 'ar' 
+                          ? `حسابك مسجل بالبريد الإلكتروني: ${auth.currentUser?.email}` 
+                          : `Profile secured under: ${auth.currentUser?.email}`}
+                      </span>
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 
