@@ -18,7 +18,8 @@
         "status": { "type": "string" },
         "profileName": { "type": "string" },
         "profileImage": { "type": "string" },
-        "dailyGoal": { "type": "number" }
+        "dailyGoal": { "type": "number" },
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user access role" }
       },
       "required": ["points", "level", "dailyZikrsCompleted", "totalTasbihCount", "badges", "updatedAt"]
     },

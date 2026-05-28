@@ -41,6 +41,7 @@ import { HomeFavorites } from './components/HomeFavorites';
 import { UserProfile } from './components/UserProfile';
 import { UniversalSearch } from './components/UniversalSearch';
 import { DailyReminders } from './components/DailyReminders';
+import { ProtectedRoute } from './components/ProtectedRoute';
 
 type Category = 'morning' | 'evening' | 'night' | 'general' | 'travel' | 'rizq' | 'all' | 'prayer' | 'debt' | 'honesty' | 'knowledge' | 'character' | 'parents' | 'patience' | 'love_halal' | 'work' | 'marriage' | 'children' | 'hospitality' | 'wudu' | 'fasting' | 'zakat_sadaqah' | 'hajj_umrah' | 'repentance' | 'dua_supplication' | 'mercy_kindness' | 'brotherhood' | 'neighbor' | 'cleanliness' | 'age_time' | 'lying' | 'envy' | 'forgiveness' | 'tawakkul' | 'quran_reading' | 'greeting' | 'orphan' | 'anger' | 'loyalty' | 'tongue' | 'good_deeds' | 'hereafter' | 'judgment' | 'hijab' | 'food' | 'sleep' | 'healing' | 'building' | 'simplicity' | 'backbiting' | 'justice' | 'bravery' | 'trust' | 'unity' | 'gratitude' | 'prophet_hadith' | 'duha' | 'after_prayer' | 'distress' | 'illness' | 'mosque' | 'clothing' | 'home' | 'ablution' | 'eating' | 'rain' | 'thunder' | 'mirror' | 'sneezing' | 'hardship' | 'market' | 'gathering' | 'waking_up' | 'adhan' | 'toilet' | 'grief';
 type View = 'home' | 'zikrs' | 'kursi' | 'hadith' | 'hajj' | 'quran' | 'marriage' | 'tasbih' | 'names' | 'settings' | 'prayer-times' | 'stories' | 'stats' | 'post-of-day' | 'sabr' | 'chat' | 'youth' | 'progress' | 'admin-portal' | 'about' | 'istikhara' | 'prayer-calc' | 'sunnah-prayers' | 'profile';
@@ -237,7 +238,10 @@ export default function App() {
   const longPressTimeoutRef = useRef<any>(null);
 
   const isDeviceAdmin = useMemo(() => {
-    if (currentUserEmail === 'adolamer9@gmail.com' || currentUserEmail === 'zanyarshkurd@gmail.com') return true;
+    const cachedEmail = localStorage.getItem('cached_admin_email');
+    const authEmail = auth.currentUser?.email;
+    const currentEmail = currentUserEmail || authEmail || cachedEmail;
+    if (currentEmail === 'adolamer9@gmail.com' || currentEmail === 'zanyarshkurd@gmail.com') return true;
     if (!deviceId) return false;
     const AUTHORIZED_ADMIN_DEVICE_IDS = [
       'dev_admin_phone_specific_9922',
@@ -246,7 +250,7 @@ export default function App() {
       localStorage.getItem('admin_authorized_device_id')
     ].filter(Boolean);
     return AUTHORIZED_ADMIN_DEVICE_IDS.includes(deviceId);
-  }, [deviceId, currentUserEmail]);
+  }, [deviceId, currentUserEmail, auth.currentUser?.email]);
 
   const handleLogoPressStart = () => {
     if (longPressTimeoutRef.current) clearTimeout(longPressTimeoutRef.current);
@@ -762,7 +766,7 @@ export default function App() {
 
   useEffect(() => {
     // Route detection for admin portal
-    if (window.location.pathname === '/admin-portal') {
+    if (window.location.pathname === '/admin-portal' || window.location.pathname === '/admin') {
       setCurrentView('admin-portal');
     }
     
@@ -1203,18 +1207,27 @@ export default function App() {
     );
   }
 
-  if (isAdmin) {
+  if (currentView === 'admin-portal') {
     return (
-      <AdminPortal 
+      <ProtectedRoute
         language={language}
-        isDeviceAdmin={isDeviceAdmin}
-        onBack={() => {
-          localStorage.removeItem('isLocalAdminAuthorized');
-          setIsAdmin(false);
-          signOut(auth);
+        onRedirect={() => {
           setCurrentView('home');
-        }} 
-      />
+          setIsAdmin(false);
+        }}
+      >
+        <AdminPortal 
+          language={language}
+          isDeviceAdmin={isDeviceAdmin}
+          onBack={() => {
+            localStorage.removeItem('isLocalAdminAuthorized');
+            localStorage.removeItem('cached_admin_email');
+            setIsAdmin(false);
+            signOut(auth);
+            setCurrentView('home');
+          }} 
+        />
+      </ProtectedRoute>
     );
   }
 

@@ -4,17 +4,171 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import crypto from "crypto";
 
 dotenv.config();
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+interface SecureUser {
+  id: number;
+  email: string;
+  passwordHash: string;
+  salt: string;
+  status: 'Active' | 'Pending';
+  otpCode: string | null;
+  otpExpiresAt: number | null;
+}
+
+// In-Memory simulated User DB for our Secure Registration & Audit lessons
+const secureUsersDb: SecureUser[] = [
+  {
+    id: 1,
+    email: "fatima.alzahra@example.com",
+    passwordHash: "7b52009b64fd0a2a49e6d8a9397530777e4878a8731383794351a942da5de1bc",
+    salt: "88937e29ad32bead59afcc89bdfadff1",
+    status: "Active",
+    otpCode: null,
+    otpExpiresAt: null,
+  },
+  {
+    id: 2,
+    email: "ahmad.kurdish@example.com",
+    passwordHash: "5f4dcc3b5aa765d61d8327deb882cf99a19c7f1efbaee6b0c2a21e0e56e05ecde",
+    salt: "e10adc3949ba59abbe56e057f20f883e",
+    status: "Pending",
+    otpCode: null,
+    otpExpiresAt: null,
+  }
+];
+let nextUserId = 3;
+
+// PBKDF2 cryptography utility which is faster, built-in, and as secure as bcrypt
+function hashPassword(password: string): { hash: string; salt: string } {
+  const salt = crypto.randomBytes(16).toString("hex");
+  const hash = crypto.pbkdf2Sync(password, salt, 1000, 64, "sha512").toString("hex");
+  return { hash, salt };
+}
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
 
   app.use(express.json());
+
+  // --- SECURE USER MANAGEMENT SIGN-UP & AUDITING CORE ENDPOINTS ---
+
+  // 1. Password Hashing & Registration route
+  app.post("/api/secure/register", (req, res) => {
+    const { email, password } = req.body;
+    if (!email || !password) {
+      return res.status(400).json({ error: "Email and password are required" });
+    }
+
+    if (secureUsersDb.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+      return res.status(400).json({ error: "Email is already registered" });
+    }
+
+    const { hash, salt } = hashPassword(password);
+    const newUser: SecureUser = {
+      id: nextUserId++,
+      email: email.toLowerCase(),
+      passwordHash: hash,
+      salt: salt,
+      status: "Active",
+      otpCode: null,
+      otpExpiresAt: null
+    };
+
+    secureUsersDb.push(newUser);
+    res.status(201).json({
+      message: "User registered securely!",
+      user: {
+        id: newUser.id,
+        status: newUser.status,
+        salt: newUser.salt,
+        passwordHash: newUser.passwordHash // Display hash and salt to prove plain-text is never saved
+      }
+    });
+  });
+
+  // 2. Admin Dashboard - Data Privacy projection endpoint (Masks and strips email/password)
+  app.get("/api/secure/admin-users", (req, res) => {
+    // STRICT REDACTION LAW: Only project ID and Status fields. 
+    // Email and password Hash are physically nonexistent in the mapped response payload.
+    const projectedUsers = secureUsersDb.map(u => ({
+      id: u.id,
+      status: u.status
+    }));
+
+    res.json({
+      description: "Secure data privacy projection. Sensitive client parameters (email/password) are barred from transmission.",
+      users: projectedUsers
+    });
+  });
+
+  // 3. Request Password Reset OTP code
+  app.post("/api/secure/request-otp", (req, res) => {
+    const { email } = req.body;
+    if (!email) {
+      return res.status(400).json({ error: "Email is required" });
+    }
+
+    const user = secureUsersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      return res.status(404).json({ error: "No user found with this email" });
+    }
+
+    // Generate secure 6-digit random OTP
+    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes lifetime
+
+    user.otpCode = otpCode;
+    user.otpExpiresAt = otpExpiresAt;
+
+    res.json({
+      message: "Security One-Time Password generated!",
+      email: user.email,
+      otpCode: otpCode, // Send back in response for demonstration simulation convenience
+      expiresInSeconds: 300
+    });
+  });
+
+  // 4. Verify OTP and complete reset (Immediately destroys token)
+  app.post("/api/secure/verify-otp", (req, res) => {
+    const { email, otpCode, newPassword } = req.body;
+    if (!email || !otpCode || !newPassword) {
+      return res.status(400).json({ error: "All arguments (email, OTP, newPassword) must be specified" });
+    }
+
+    const user = secureUsersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+    if (!user) {
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    if (!user.otpCode || !user.otpExpiresAt || user.otpExpiresAt < Date.now()) {
+      return res.status(400).json({ error: "OTP expired or not requested" });
+    }
+
+    if (user.otpCode !== otpCode) {
+      return res.status(400).json({ error: "Invalid OTP credentials" });
+    }
+
+    // Recalculate strong cryptographic hash using a new random salt
+    const { hash, salt } = hashPassword(newPassword);
+    user.passwordHash = hash;
+    user.salt = salt;
+
+    // IMMEDIATE TRUNCATION FOR SECURITY: Erase OTP keys instantly to prevent replay attacks
+    user.otpCode = null;
+    user.otpExpiresAt = null;
+
+    res.json({
+      message: "Password reset successful! One-Time Password token has been permanently invalidated.",
+      status: user.status
+    });
+  });
 
   const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
 

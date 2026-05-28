@@ -38,7 +38,8 @@ service cloud.firestore {
              (!('totalAyahsRead' in data) || data.totalAyahsRead is number) &&
              (!('profileName' in data) || data.profileName is string) &&
              (!('profileImage' in data) || data.profileImage is string) &&
-             (!('dailyGoal' in data) || data.dailyGoal is number);
+             (!('dailyGoal' in data) || data.dailyGoal is number) &&
+             (!('role' in data) || (data.role is string && (data.role == 'user' || data.role == 'admin')));
     }
 
     function isValidZikrStat(data) {
@@ -82,9 +83,11 @@ service cloud.firestore {
     match /users/{userId} {
       allow get, list: if true;
       
-      allow create: if isValidId(userId) && isValidUser(incoming());
+      allow create: if isValidId(userId) && isValidUser(incoming()) && 
+                    (!('role' in incoming()) || incoming().role == 'user');
       
-      allow update: if isValidId(userId) && isValidUser(incoming());
+      allow update: if isValidId(userId) && isValidUser(incoming()) && 
+                    (isAdmin() || (isOwner(userId) && (!('role' in incoming()) || ('role' in existing() ? incoming().role == existing().role : incoming().role == 'user'))));
       
       allow delete: if false;
     }
