@@ -18,6 +18,300 @@ import {
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { HomeFavorites } from './HomeFavorites';
 
+interface AvatarRendererProps {
+  avatarId: string;
+  className?: string;
+}
+
+export function AvatarRenderer({ avatarId, className = "w-full h-full" }: AvatarRendererProps) {
+  const renderGradients = () => (
+    <defs>
+      <linearGradient id="grad_man_1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#0d9488" />
+        <stop offset="100%" stopColor="#115e59" />
+      </linearGradient>
+      <linearGradient id="grad_man_2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#f59e0b" />
+        <stop offset="100%" stopColor="#b45309" />
+      </linearGradient>
+      <linearGradient id="grad_woman_1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#ec4899" />
+        <stop offset="100%" stopColor="#a21caf" />
+      </linearGradient>
+      <linearGradient id="grad_woman_2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#14b8a6" />
+        <stop offset="100%" stopColor="#0f766e" />
+      </linearGradient>
+      <linearGradient id="grad_boy_1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#f97316" />
+        <stop offset="100%" stopColor="#ea580c" />
+      </linearGradient>
+      <linearGradient id="grad_boy_2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#3b82f6" />
+        <stop offset="100%" stopColor="#1d4ed8" />
+      </linearGradient>
+      <linearGradient id="grad_girl_1" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#fb7185" />
+        <stop offset="100%" stopColor="#e11d48" />
+      </linearGradient>
+      <linearGradient id="grad_girl_2" x1="0%" y1="0%" x2="100%" y2="100%">
+        <stop offset="0%" stopColor="#a855f7" />
+        <stop offset="100%" stopColor="#6b21a8" />
+      </linearGradient>
+    </defs>
+  );
+
+  switch (avatarId) {
+    case 'avatar_man_1': // Young Active Muslim Man
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_man_1)" />
+          {/* Clothing */}
+          <path d="M25 85 C 35 70, 65 70, 75 85 Z" fill="#ffffff" />
+          <path d="M40 70 L 50 82 L 60 70 Z" fill="#e2e8f0" />
+          {/* Neck */}
+          <rect x="44" y="58" width="12" height="15" rx="3" fill="#ffd0a3" />
+          {/* Ears */}
+          <circle cx="29" cy="46" r="5" fill="#ffd0a3" />
+          <circle cx="71" cy="46" r="5" fill="#ffd0a3" />
+          {/* Face */}
+          <rect x="31" y="28" width="38" height="38" rx="19" fill="#ffd0a3" />
+          {/* Hair */}
+          <path d="M30 33 C 28 22, 72 22, 70 33 C 65 25, 35 25, 30 33 Z" fill="#1e293b" />
+          <path d="M31 33 C 32 30, 48 24, 55 28 C 65 30, 68 33, 68 33 Z" fill="#1e293b" />
+          {/* Beard */}
+          <path d="M31 46 C 31 66, 69 66, 69 46 C 65 64, 35 64, 31 46 Z" fill="#334155" />
+          <path d="M40 50 C 45 48, 55 48, 60 50 C 60 56, 40 56, 40 50 Z" fill="#1e293b" />
+          <circle cx="50" cy="62" r="4" fill="#1e293b" />
+          {/* Eyes */}
+          <ellipse cx="42" cy="41" rx="2.5" ry="3.5" fill="#0f172a" />
+          <ellipse cx="58" cy="41" rx="2.5" ry="3.5" fill="#0f172a" />
+          <path d="M39 36 C 41 34, 45 35, 45 36" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path d="M61 36 C 59 34, 55 35, 55 36" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Cheeks */}
+          <circle cx="36" cy="47" r="2.5" fill="#f43f5e" fillOpacity="0.3" />
+          <circle cx="64" cy="47" r="2.5" fill="#f43f5e" fillOpacity="0.3" />
+          {/* Nose */}
+          <path d="M48 44 C 49 46, 51 46, 52 44" stroke="#e0a070" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Smile */}
+          <path d="M44 49 C 47 54, 53 54, 56 49" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_man_2': // Venerable Elder Sheikh with Kufi Cap
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_man_2)" />
+          {/* Thobe Body */}
+          <path d="M22 85 C 32 72, 68 72, 78 85 Z" fill="#f8fafc" />
+          <path d="M45 72 L 50 82 L 55 72 Z" fill="#e2e8f0" />
+          {/* Neck */}
+          <rect x="44" y="60" width="12" height="13" rx="2" fill="#fed7aa" />
+          {/* Face */}
+          <circle cx="50" cy="43" r="18" fill="#fed7aa" />
+          {/* Kufi Cap */}
+          <path d="M32 36 C 32 23, 68 23, 68 36 Z" fill="#ffffff" />
+          <rect x="32" y="34" width="36" height="3" fill="#e2e8f0" rx="1" />
+          {/* Big White/Grey Beard */}
+          <path d="M32 45 C 32 68, 68 68, 68 45 C 64 64, 36 64, 32 45 Z" fill="#f1f5f9" />
+          <path d="M31 43 C 33 69, 67 69, 69 43" stroke="#cbd5e1" strokeWidth="1" fill="none" />
+          <path d="M40 45 C 44 44, 56 44, 60 45 C 58 48, 42 48, 40 45 Z" fill="#e2e8f0" />
+          {/* Friendly Eyes */}
+          <path d="M41 40 C 43 38, 46 39, 46 41" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+          <path d="M59 40 C 57 38, 54 39, 54 41" stroke="#475569" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+          {/* Nose */}
+          <path d="M48 43 Q 50 46 52 43" stroke="#fdba74" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Kind smile */}
+          <path d="M45 48 Q 50 51 55 48" stroke="#475569" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_woman_1': // Young Hijabi Woman
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_woman_1)" />
+          {/* Robe/Chest */}
+          <path d="M22 88 C 30 73, 70 73, 78 88 Z" fill="#f0abfc" fillOpacity="0.8" />
+          {/* Inner bonnet */}
+          <path d="M34 38 C 34 26, 66 26, 66 38 Z" fill="#ffffff" />
+          {/* Face */}
+          <ellipse cx="50" cy="46" rx="14" ry="17" fill="#ffedd5" />
+          {/* Pastel Hijab Scarf */}
+          <path d="M31 38 C 31 21, 69 21, 69 38 C 69 57, 59 78, 50 78 C 41 78, 31 57, 31 38 Z" fill="#fdf2ff" fillOpacity="0.95" />
+          <path d="M34 38 C 34 24, 66 24, 66 38 C 66 52, 59 64, 50 64 C 41 64, 34 52, 34 38 Z" fill="none" stroke="#f5d0fe" strokeWidth="2" />
+          {/* Face overlay */}
+          <ellipse cx="50" cy="45" rx="12" ry="14" fill="#ffedd5" />
+          {/* Eyes */}
+          <ellipse cx="44" cy="43" rx="2" ry="3" fill="#1e1b4b" />
+          <ellipse cx="56" cy="43" rx="2" ry="3" fill="#1e1b4b" />
+          <path d="M41 40 Q 44 38 46 41" stroke="#1e1b4b" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path d="M59 40 Q 56 38 54 41" stroke="#1e1b4b" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Rosy blush cheeks */}
+          <circle cx="41" cy="48" r="2" fill="#f43f5e" fillOpacity="0.4" />
+          <circle cx="59" cy="48" r="2" fill="#f43f5e" fillOpacity="0.4" />
+          {/* Cute small smile */}
+          <path d="M46 51 Q 50 54 54 51" stroke="#1e1b4b" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_woman_2': // Advanced Hijabi Lady
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_woman_2)" />
+          {/* Abaya Body Dress */}
+          <path d="M22 88 C 30 74, 70 74, 78 88 Z" fill="#115e59" />
+          {/* Underscarf (Dark bone) */}
+          <path d="M35 38 C 35 25, 65 25, 65 38 Z" fill="#2d3748" />
+          {/* Oval Skin Face */}
+          <ellipse cx="50" cy="45" rx="13" ry="16" fill="#fef08a" fillOpacity="0.9" />
+          {/* Outer elegant draped Hijab */}
+          <path d="M32 36 C 32 19, 68 19, 68 36 C 68 56, 58 76, 50 76 C 42 76, 32 56, 32 36 Z" fill="#0d9488" />
+          <path d="M34 36 C 34 21, 66 21, 66 36 C 66 50, 58 63, 50 63 C 42 63, 34 50, 34 36 Z" fill="none" stroke="#14b8a6" strokeWidth="2.5" />
+          {/* Re-assert face */}
+          <ellipse cx="50" cy="44" rx="11.5" ry="13.5" fill="#ffd0a3" />
+          {/* Refined eyes */}
+          <ellipse cx="44" cy="41" rx="2" ry="3" fill="#0f172a" />
+          <ellipse cx="56" cy="41" rx="2" ry="3" fill="#0f172a" />
+          <path d="M41 38 C 43 36, 46 37, 46 38" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path d="M59 38 C 57 36, 54 37, 54 38" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Friendly expression */}
+          <circle cx="41" cy="46" r="2.2" fill="#e11d48" fillOpacity="0.25" />
+          <circle cx="59" cy="46" r="2.2" fill="#e11d48" fillOpacity="0.25" />
+          <path d="M46 49 C 48 52, 52 52, 54 49" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_boy_1': // Younger Muslim Boy (~7 years)
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_boy_1)" />
+          {/* Body and Orange T-shirt */}
+          <path d="M25 86 C 33 72, 67 72, 75 86 Z" fill="#ef4444" />
+          <rect x="44" y="60" width="12" height="13" rx="2" fill="#ffedd5" />
+          {/* Round chubby child face */}
+          <circle cx="50" cy="44" r="17" fill="#ffedd5" />
+          {/* Adorable little ears */}
+          <circle cx="31" cy="44" r="3.5" fill="#ffedd5" />
+          <circle cx="69" cy="44" r="3.5" fill="#ffedd5" />
+          {/* Cute Fluffy Brown Anime Hair */}
+          <path d="M30 38 C 28 24, 72 24, 70 38 C 72 32, 66 22, 50 24 C 34 22, 28 32, 30 38 Z" fill="#7c2d12" />
+          <path d="M32 32 C 38 27, 47 28, 50 32 C 53 28, 62 27, 68 32 Z" fill="#7c2d12" />
+          {/* Chubby bright eyes */}
+          <circle cx="43" cy="43" r="3" fill="#1e293b" />
+          <circle cx="57" cy="43" r="3" fill="#1e293b" />
+          <circle cx="42" cy="41" r="1" fill="#ffffff" />
+          <circle cx="56" cy="41" r="1" fill="#ffffff" />
+          {/* Cheeks Blush */}
+          <circle cx="38" cy="49" r="3" fill="#fb7185" fillOpacity="0.4" />
+          <circle cx="62" cy="49" r="3" fill="#fb7185" fillOpacity="0.4" />
+          {/* Smiling tiny cartoon mouth */}
+          <path d="M44 49 Q 50 55 56 49" stroke="#1e293b" strokeWidth="2" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_boy_2': // Teenage Muslim Boy (~14 years)
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <rect width="100" height="100" fill="url(#grad_boy_2)" rx="50" />
+          {/* Shirt */}
+          <path d="M23 85 C 33 70, 67 70, 77 85 Z" fill="#1e3a8a" />
+          <path d="M40 70 L 50 82 L 60 70 Z" fill="#ffffff" />
+          {/* Neck */}
+          <rect x="43" y="58" width="14" height="14" fill="#ffd0a3" />
+          {/* Ears */}
+          <circle cx="30" cy="45" r="4" fill="#ffd0a3" />
+          <circle cx="70" cy="45" r="4" fill="#ffd0a3" />
+          {/* Face */}
+          <rect x="32" y="27" width="36" height="36" rx="18" fill="#ffd0a3" />
+          {/* Styled Teenage Hair */}
+          <path d="M30 33 Q 32 18 50 18 Q 68 18 70 33 Q 66 22 50 20 Q 34 22 30 33 Z" fill="#0f172a" />
+          <path d="M32 30 C 33 26, 42 22, 50 24 C 58 22, 67 26, 68 30 Z" fill="#0f172a" />
+          {/* Eyes */}
+          <circle cx="43" cy="40" r="2.5" fill="#0f172a" />
+          <circle cx="57" cy="40" r="2.5" fill="#0f172a" />
+          <path d="M40 35 Q 43 33 46 35" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path d="M60 35 Q 57 33 54 35" stroke="#0f172a" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Active teen smile */}
+          <path d="M43 47 C 46 51, 54 51, 57 47" stroke="#0f172a" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_girl_1': // Younger Muslim Girl (~6 years)
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_girl_1)" />
+          {/* Soft yellow/green robe */}
+          <path d="M22 88 C 30 73, 70 73, 78 88 Z" fill="#fef08a" />
+          {/* Underscarf (White) */}
+          <path d="M36 40 C 36 28, 64 28, 64 40 Z" fill="#ffffff" />
+          {/* Chubby face */}
+          <circle cx="50" cy="46" r="13" fill="#fed7aa" />
+          {/* Soft Pink Mini-Hijab frame */}
+          <path d="M33 40 C 33 22, 67 22, 67 40 C 67 56, 59 74, 50 74 C 41 74, 33 56, 33 40 Z" fill="#fecdd3" />
+          <path d="M35 40 C 35 25, 65 25, 65 40 C 65 52, 58 64, 50 64 C 42 64, 35 52, 35 40 Z" fill="none" stroke="#fda4af" strokeWidth="2" />
+          {/* Face cutout foreground */}
+          <circle cx="50" cy="45" r="11" fill="#fed7aa" />
+          {/* Twinkly large girl-eyes */}
+          <ellipse cx="45" cy="43" rx="2.5" ry="3.5" fill="#1e293b" />
+          <ellipse cx="55" cy="43" rx="2.5" ry="3.5" fill="#1e293b" />
+          <circle cx="44" cy="41" r="1" fill="#ffffff" />
+          <circle cx="54" cy="41" r="1" fill="#ffffff" />
+          {/* Sweet blush */}
+          <circle cx="41" cy="49" r="2" fill="#e11d48" fillOpacity="0.35" />
+          <circle cx="59" cy="49" r="2" fill="#e11d48" fillOpacity="0.35" />
+          {/* Happy smile */}
+          <path d="M45 49 Q 50 53 55 49" stroke="#1e293b" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    case 'avatar_girl_2': // Teenage Muslim Girl (~13 years)
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          {renderGradients()}
+          <circle cx="50" cy="50" r="50" fill="url(#grad_girl_2)" />
+          {/* Dress */}
+          <path d="M22 88 C 30 73, 70 73, 78 88 Z" fill="#f472b6" fillOpacity="0.9" />
+          {/* Dark underscarf */}
+          <path d="M35 38 C 35 25, 65 25, 65 38 Z" fill="#4c1d95" />
+          {/* Elegant oval face */}
+          <ellipse cx="50" cy="45" rx="12" ry="15" fill="#ffd0a3" />
+          {/* Sky blue draped Hijab */}
+          <path d="M31 36 C 31 18, 69 18, 69 36 C 69 56, 59 76, 50 76 C 41 76, 31 56, 31 36 Z" fill="#60a5fa" />
+          <path d="M33 36 C 33 21, 67 21, 67 36 C 67 51, 58 63, 50 63 C 42 63, 33 51, 33 36 Z" fill="none" stroke="#93c5fd" strokeWidth="2" />
+          {/* Face front placement */}
+          <ellipse cx="50" cy="44" rx="11" ry="13.2" fill="#ffd0a3" />
+          {/* Cute sweet eyes */}
+          <ellipse cx="44" cy="41" rx="2" ry="3" fill="#1e1b4b" />
+          <ellipse cx="56" cy="41" rx="2" ry="3" fill="#1e1b4b" />
+          <path d="M41 38 Q 44 36 46 38" stroke="#1e1b4b" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          <path d="M59 38 Q 56 36 54 38" stroke="#1e1b4b" strokeWidth="1.5" strokeLinecap="round" fill="none" />
+          {/* Elegant light blush cheeks */}
+          <circle cx="41" cy="46" r="2" fill="#f43f5e" fillOpacity="0.3" />
+          <circle cx="59" cy="46" r="2" fill="#f43f5e" fillOpacity="0.3" />
+          {/* Sweet gentle smile */}
+          <path d="M46 49 Q 50 52 54 49" stroke="#1d4ed8" strokeWidth="1.8" strokeLinecap="round" fill="none" />
+        </svg>
+      );
+
+    default: // Dynamic fallback to simple letter icon
+      return (
+        <svg viewBox="0 0 100 100" className={className}>
+          <circle cx="50" cy="50" r="50" fill="#0d9488" />
+          <text x="50" y="55" dominantBaseline="middle" textAnchor="middle" fill="#ffffff" fontWeight="bold" fontSize="40">
+            {avatarId ? avatarId.trim().charAt(0).toUpperCase() : "Z"}
+          </text>
+        </svg>
+      );
+  }
+}
+
 interface UserProfileProps {
   language: 'ku' | 'ar' | 'en';
   t: any;
@@ -144,16 +438,16 @@ export function UserProfile({
     }
   ];
 
-  // Preset spiritual avatars for fallback or quick assign - 3D cartoon anime style
+  // Preset spiritual avatars for fallback or quick assign - Beautiful secure vector cartoon IDs
   const avatarPresets = [
-    { url: '/src/assets/images/avatar_man_1_1779920017633.png', label: { ku: 'گورجی گەنج', ar: 'شاب نشيط', en: 'Young Active' } },
-    { url: '/src/assets/images/avatar_man_2_1779920036465.png', label: { ku: 'شیخ و وێنە', ar: 'شيخ وقور', en: 'Venerable Elder' } },
-    { url: '/src/assets/images/avatar_woman_1_1779920054100.png', label: { ku: 'کچی پاک', ar: 'فتاة خاشعة', en: 'Young Devoted' } },
-    { url: '/src/assets/images/avatar_woman_2_1779920070280.png', label: { ku: 'باڵاپۆش', ar: 'سيدة محجبة', en: 'Hijabi Lady' } },
-    { url: '/src/assets/images/avatar_boy_1_1779920091213.png', label: { ku: 'منداڵ', ar: 'طفل صغير', en: 'Little Boy' } },
-    { url: '/src/assets/images/avatar_boy_2_1779920108812.png', label: { ku: 'لاو', ar: 'شاب فتي', en: 'Teen Boy' } },
-    { url: '/src/assets/images/avatar_girl_1_1779920125395.png', label: { ku: 'بچکۆلە', ar: 'طفلة محجبة', en: 'Little Girl' } },
-    { url: '/src/assets/images/avatar_girl_2_1779920141256.png', label: { ku: 'کچ', ar: 'فتاة محجبة', en: 'Teen Girl' } }
+    { url: 'avatar_man_1', label: { ku: 'گورجی گەنج (پیاو)', ar: 'شاب نشيط', en: 'Young Active Man' } },
+    { url: 'avatar_man_2', label: { ku: 'شیخ و بەتەمەن (پیاو)', ar: 'شيخ وقور', en: 'Venerable Elder Sheikh' } },
+    { url: 'avatar_woman_1', label: { ku: 'کچی پاک (باڵاپۆش)', ar: 'فتاة خاشعة محجبة', en: 'Young Devoted Hijabi' } },
+    { url: 'avatar_woman_2', label: { ku: 'سەردەمی (باڵاپۆش)', ar: 'سيدة محجبة', en: 'Modern Hijabi' } },
+    { url: 'avatar_boy_1', label: { ku: 'منداڵ (دەستپێک)', ar: 'طفل صغير صالح', en: 'Little Boy (7-8 yr)' } },
+    { url: 'avatar_boy_2', label: { ku: 'لاو (نەوجەوان)', ar: 'شاب يافع طهور', en: 'Teen Boy (14-15 yr)' } },
+    { url: 'avatar_girl_1', label: { ku: 'بچکۆلە (باڵاپۆش)', ar: 'طفلة محجبة صالحة', en: 'Little Hijabi Girl (6-7 yr)' } },
+    { url: 'avatar_girl_2', label: { ku: 'کچی گەنج (باڵاپۆش)', ar: 'فتاة محجبة يافعة', en: 'Teen Hijabi Girl (13-14 yr)' } }
   ];
 
   // Weekly activity analytical data for charting
@@ -553,7 +847,11 @@ export function UserProfile({
 
                 <div className="absolute inset-4 rounded-full overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-950 group">
                   {profileImage ? (
-                    <img src={profileImage} alt="User Profile Picture" className="w-full h-full object-cover" />
+                    profileImage.startsWith('avatar_') ? (
+                      <AvatarRenderer avatarId={profileImage} className="w-full h-full" />
+                    ) : (
+                      <img src={profileImage} alt="User Profile Picture" className="w-full h-full object-cover" />
+                    )
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-brand-emerald to-teal-600 text-white font-black text-3xl select-none">
                       {profileName ? profileName.trim().charAt(0).toUpperCase() : <User size={36} />}
@@ -671,7 +969,7 @@ export function UserProfile({
                         className={`w-9 h-9 rounded-full border overflow-hidden hover:scale-105 active:scale-95 transition-all relative group ${profileImage === preset.url ? 'border-brand-emerald ring-2 ring-brand-emerald/40' : 'border-slate-200 dark:border-slate-850'}`}
                         title={preset.label[language] || preset.label['en']}
                       >
-                        <img src={preset.url} alt={preset.label['en']} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                        <AvatarRenderer avatarId={preset.url} className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
