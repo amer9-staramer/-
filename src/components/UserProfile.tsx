@@ -602,7 +602,8 @@ export function UserProfile({
             profileName,
             profileImage,
             dailyGoal,
-            role: 'user'
+            role: 'user',
+            email: cred.user.email || ''
           }, { merge: true });
 
           setAuthSuccess(language === 'ku' ? '✅ هەژمارەکەت دروستکرا و نوێترین چالاکییەکانت بە سەرکەوتوویی پاشەکەوت کران!' : language === 'ar' ? '✅ تم إنشاء الحساب وربط داتا الأذكار بنجاح!' : '✅ Account created and linked successfully!');

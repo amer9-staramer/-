@@ -1264,7 +1264,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                                   <div className="truncate max-w-[150px] sm:max-w-xs text-left">
                                     <div className="flex items-center gap-2">
                                       <span className="font-bold text-slate-300 group-hover:text-white transition-colors block text-sm truncate" title={u.id}>
-                                        بەندەی اللە
+                                        {u.profileName || (language === 'ku' ? 'بەندەی اللە' : language === 'ar' ? 'عبد الله' : 'Servant of Allah')}
                                       </span>
                                       {online ? (
                                         <span className="flex h-2 w-2 relative shrink-0">
@@ -1275,6 +1275,9 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                                         <span className="h-2 w-2 rounded-full bg-slate-600 block shrink-0"></span>
                                       )}
                                     </div>
+                                    <span className="text-[9px] text-slate-500 font-semibold block uppercase truncate max-w-[150px]" title={u.email}>
+                                      {u.email || (language === 'ku' ? 'مێوانی کاتی' : language === 'ar' ? 'زائر مؤقت' : 'Temporary Guest')}
+                                    </span>
                                     <span className={`text-[10px] font-bold block mt-0.5 ${online ? 'text-emerald-400' : 'text-slate-500'}`}>
                                       {online ? 'ئۆنڵاین (Online)' : 'ئۆفڵاین (Offline)'} | Reg #{u.userNo || 'N/A'}
                                     </span>

@@ -165,7 +165,8 @@ export function useUserStats() {
         profileName,
         profileImage,
         dailyGoal,
-        userNo: userNumber
+        userNo: userNumber,
+        email: auth.currentUser?.email || ''
       };
 
       if (userDoc.exists()) {
@@ -233,7 +234,8 @@ export function useUserStats() {
             profileName,
             profileImage,
             dailyGoal,
-            userNo: stats.userNo || null
+            userNo: stats.userNo || null,
+            email: auth.currentUser?.email || ''
           }, { merge: true });
         } catch (err) {
           console.warn("Firestore save failed (offline or unauthenticated):", err);
