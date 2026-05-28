@@ -1,5 +1,4 @@
 import express from "express";
-import { createServer as createViteServer } from "vite";
 import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI } from "@google/genai";
@@ -51,278 +50,294 @@ function hashPassword(password: string): { hash: string; salt: string } {
   return { hash, salt };
 }
 
-async function startServer() {
-  const app = express();
-  const PORT = 3000;
+// Instantiate Express App synchronously at the module level!
+// This allows Vercel to import this file and immediately attach the express app handler.
+const app = express();
+const PORT = 3000;
 
-  app.use(express.json());
+app.use(express.json());
 
-  // --- SECURE USER MANAGEMENT SIGN-UP & AUDITING CORE ENDPOINTS ---
+// --- SECURE USER MANAGEMENT SIGN-UP & AUDITING CORE ENDPOINTS ---
 
-  // 1. Password Hashing & Registration route
-  app.post("/api/secure/register", (req, res) => {
-    const { email, password } = req.body;
-    if (!email || !password) {
-      return res.status(400).json({ error: "Email and password are required" });
+// 1. Password Hashing & Registration route
+app.post("/api/secure/register", (req, res) => {
+  const { email, password } = req.body;
+  if (!email || !password) {
+    return res.status(400).json({ error: "Email and password are required" });
+  }
+
+  if (secureUsersDb.some(u => u.email.toLowerCase() === email.toLowerCase())) {
+    return res.status(400).json({ error: "Email is already registered" });
+  }
+
+  const { hash, salt } = hashPassword(password);
+  const newUser: SecureUser = {
+    id: nextUserId++,
+    email: email.toLowerCase(),
+    passwordHash: hash,
+    salt: salt,
+    status: "Active",
+    otpCode: null,
+    otpExpiresAt: null
+  };
+
+  secureUsersDb.push(newUser);
+  res.status(201).json({
+    message: "User registered securely!",
+    user: {
+      id: newUser.id,
+      status: newUser.status,
+      salt: newUser.salt,
+      passwordHash: newUser.passwordHash // Display hash and salt to prove plain-text is never saved
     }
+  });
+});
 
-    if (secureUsersDb.some(u => u.email.toLowerCase() === email.toLowerCase())) {
-      return res.status(400).json({ error: "Email is already registered" });
-    }
+// 2. Admin Dashboard - Data Privacy projection endpoint (Masks and strips email/password)
+app.get("/api/secure/admin-users", (req, res) => {
+  // STRICT REDACTION LAW: Only project ID and Status fields. 
+  // Email and password Hash are physically nonexistent in the mapped response payload.
+  const projectedUsers = secureUsersDb.map(u => ({
+    id: u.id,
+    status: u.status
+  }));
 
-    const { hash, salt } = hashPassword(password);
-    const newUser: SecureUser = {
-      id: nextUserId++,
-      email: email.toLowerCase(),
-      passwordHash: hash,
-      salt: salt,
-      status: "Active",
-      otpCode: null,
-      otpExpiresAt: null
-    };
+  res.json({
+    description: "Secure data privacy projection. Sensitive client parameters (email/password) are barred from transmission.",
+    users: projectedUsers
+  });
+});
 
-    secureUsersDb.push(newUser);
-    res.status(201).json({
-      message: "User registered securely!",
-      user: {
-        id: newUser.id,
-        status: newUser.status,
-        salt: newUser.salt,
-        passwordHash: newUser.passwordHash // Display hash and salt to prove plain-text is never saved
+// 3. Request Password Reset OTP code
+app.post("/api/secure/request-otp", (req, res) => {
+  const { email } = req.body;
+  if (!email) {
+    return res.status(400).json({ error: "Email is required" });
+  }
+
+  const user = secureUsersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) {
+    return res.status(404).json({ error: "No user found with this email" });
+  }
+
+  // Generate secure 6-digit random OTP
+  const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+  const otpExpiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes lifetime
+
+  user.otpCode = otpCode;
+  user.otpExpiresAt = otpExpiresAt;
+
+  res.json({
+    message: "Security One-Time Password generated!",
+    email: user.email,
+    otpCode: otpCode, // Send back in response for demonstration simulation convenience
+    expiresInSeconds: 300
+  });
+});
+
+// 4. Verify OTP and complete reset (Immediately destroys token)
+app.post("/api/secure/verify-otp", (req, res) => {
+  const { email, otpCode, newPassword } = req.body;
+  if (!email || !otpCode || !newPassword) {
+    return res.status(400).json({ error: "All arguments (email, OTP, newPassword) must be specified" });
+  }
+
+  const user = secureUsersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!user) {
+    return res.status(404).json({ error: "User not found" });
+  }
+
+  if (!user.otpCode || !user.otpExpiresAt || user.otpExpiresAt < Date.now()) {
+    return res.status(400).json({ error: "OTP expired or not requested" });
+  }
+
+  if (user.otpCode !== otpCode) {
+    return res.status(400).json({ error: "Invalid OTP credentials" });
+  }
+
+  // Recalculate strong cryptographic hash using a new random salt
+  const { hash, salt } = hashPassword(newPassword);
+  user.passwordHash = hash;
+  user.salt = salt;
+
+  // IMMEDIATE TRUNCATION FOR SECURITY: Erase OTP keys instantly to prevent replay attacks
+  user.otpCode = null;
+  user.otpExpiresAt = null;
+
+  res.json({
+    message: "Password reset successful! One-Time Password token has been permanently invalidated.",
+    status: user.status
+  });
+});
+
+const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
+
+// Translation API for Hadiths
+app.post("/api/translate", async (req, res) => {
+  const { text, arabicText, targetLanguage } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
+  }
+
+  try {
+    const prompt = `Translate this Islamic Hadith/text into natural, high-quality ${targetLanguage === 'ku' ? 'Central Kurdish (Sorani)' : targetLanguage}. 
+    Provide ONLY the translated text, no extra commentary, no labels, no "Based on...".
+    Arabic: ${arabicText || ""}
+    English: ${text}`;
+    
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt
+    });
+    const translated = result.text?.trim() || "";
+    
+    res.json({ translatedText: translated });
+  } catch (error: any) {
+    console.error("Translation error:", error);
+    res.status(500).json({ error: "Failed to translate text" });
+  }
+});
+
+// Tafsir Translation API
+app.post("/api/translate-tafsir", async (req, res) => {
+  const { text } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
+  }
+
+  try {
+    const prompt = `Translate the following Islamic Tafsir part to Kurdish (Sorani). Keep it accurate, easy to understand, and spiritual. Do not use formatting like bold or headers. Just the translated Kurdish text:
+    
+    Text: ${text}`;
+    
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: prompt
+    });
+    const translated = result.text?.trim() || "";
+    
+    res.json({ translatedText: translated });
+  } catch (error: any) {
+    console.error("Tafsir translation error:", error);
+    res.status(500).json({ error: "Failed to translate Tafsir" });
+  }
+});
+
+// Hadith Search API
+app.post("/api/hadith-search", async (req, res) => {
+  const { query, language } = req.body;
+  
+  if (!process.env.GEMINI_API_KEY) {
+    return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
+  }
+
+  const systemInstruction = `
+    You are a specialized Hadith scholar assistant.
+    Your task is to find authentic Hadiths based on user keywords.
+    When a user provides keywords in Kurdish (Sorani), Arabic, or English, search for the most relevant authentic Hadiths.
+    Always provide the Arabic text of the Hadith, followed by the translation in the user's preferred language (${language === 'ku' ? 'Kurdish Sorani' : language === 'ar' ? 'Arabic' : 'English'}).
+    Include the source (e.g., Sahih Bukhari, Sahih Muslim, etc.) and the Hadith number if available.
+    If the authenticity is discussed by scholars, mention it briefly (e.g., Sahih, Hasan).
+    Format the output in clean Markdown.
+    Use Google Search grounding to ensure the Hadiths are accurate and well-sourced.
+  `;
+
+  try {
+    const result = await ai.models.generateContent({
+      model: "gemini-3-flash-preview",
+      contents: `Search for Hadiths related to: "${query}"`,
+      config: {
+        systemInstruction,
+        tools: [{ googleSearch: {} }]
       }
     });
-  });
-
-  // 2. Admin Dashboard - Data Privacy projection endpoint (Masks and strips email/password)
-  app.get("/api/secure/admin-users", (req, res) => {
-    // STRICT REDACTION LAW: Only project ID and Status fields. 
-    // Email and password Hash are physically nonexistent in the mapped response payload.
-    const projectedUsers = secureUsersDb.map(u => ({
-      id: u.id,
-      status: u.status
-    }));
-
-    res.json({
-      description: "Secure data privacy projection. Sensitive client parameters (email/password) are barred from transmission.",
-      users: projectedUsers
-    });
-  });
-
-  // 3. Request Password Reset OTP code
-  app.post("/api/secure/request-otp", (req, res) => {
-    const { email } = req.body;
-    if (!email) {
-      return res.status(400).json({ error: "Email is required" });
-    }
-
-    const user = secureUsersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) {
-      return res.status(404).json({ error: "No user found with this email" });
-    }
-
-    // Generate secure 6-digit random OTP
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
-    const otpExpiresAt = Date.now() + 5 * 60 * 1000; // 5 minutes lifetime
-
-    user.otpCode = otpCode;
-    user.otpExpiresAt = otpExpiresAt;
-
-    res.json({
-      message: "Security One-Time Password generated!",
-      email: user.email,
-      otpCode: otpCode, // Send back in response for demonstration simulation convenience
-      expiresInSeconds: 300
-    });
-  });
-
-  // 4. Verify OTP and complete reset (Immediately destroys token)
-  app.post("/api/secure/verify-otp", (req, res) => {
-    const { email, otpCode, newPassword } = req.body;
-    if (!email || !otpCode || !newPassword) {
-      return res.status(400).json({ error: "All arguments (email, OTP, newPassword) must be specified" });
-    }
-
-    const user = secureUsersDb.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (!user) {
-      return res.status(404).json({ error: "User not found" });
-    }
-
-    if (!user.otpCode || !user.otpExpiresAt || user.otpExpiresAt < Date.now()) {
-      return res.status(400).json({ error: "OTP expired or not requested" });
-    }
-
-    if (user.otpCode !== otpCode) {
-      return res.status(400).json({ error: "Invalid OTP credentials" });
-    }
-
-    // Recalculate strong cryptographic hash using a new random salt
-    const { hash, salt } = hashPassword(newPassword);
-    user.passwordHash = hash;
-    user.salt = salt;
-
-    // IMMEDIATE TRUNCATION FOR SECURITY: Erase OTP keys instantly to prevent replay attacks
-    user.otpCode = null;
-    user.otpExpiresAt = null;
-
-    res.json({
-      message: "Password reset successful! One-Time Password token has been permanently invalidated.",
-      status: user.status
-    });
-  });
-
-  const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "" });
-
-  // Translation API for Hadiths
-  app.post("/api/translate", async (req, res) => {
-    const { text, arabicText, targetLanguage } = req.body;
     
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
-    }
+    const responseText = result.text?.trim() || "No results found.";
+    res.json({ text: responseText });
+  } catch (error: any) {
+    console.error("Hadith search error:", error);
+    res.status(500).json({ error: "Failed to search Hadiths" });
+  }
+});
 
-    try {
-      const prompt = `Translate this Islamic Hadith/text into natural, high-quality ${targetLanguage === 'ku' ? 'Central Kurdish (Sorani)' : targetLanguage}. 
-      Provide ONLY the translated text, no extra commentary, no labels, no "Based on...".
-      Arabic: ${arabicText || ""}
-      English: ${text}`;
-      
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
-      });
-      const translated = result.text?.trim() || "";
-      
-      res.json({ translatedText: translated });
-    } catch (error: any) {
-      console.error("Translation error:", error);
-      res.status(500).json({ error: "Failed to translate text" });
-    }
-  });
+// 5. Firebase and Environment Diagnostics Health-Check API
+app.get("/api/test-firebase", async (req, res) => {
+  const diagnostics: Record<string, any> = {
+    timestamp: new Date().toISOString(),
+    nodeEnv: process.env.NODE_ENV || "development",
+    geminiApiKeyConfigured: !!process.env.GEMINI_API_KEY,
+    geminiApiKeyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+    firebaseConfigPresent: false,
+    firebaseConfigKeys: [] as string[],
+    firebaseConfigValidation: {} as Record<string, any>
+  };
 
-  // Tafsir Translation API
-  app.post("/api/translate-tafsir", async (req, res) => {
-    const { text } = req.body;
-    
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
-    }
-
-    try {
-      const prompt = `Translate the following Islamic Tafsir part to Kurdish (Sorani). Keep it accurate, easy to understand, and spiritual. Do not use formatting like bold or headers. Just the translated Kurdish text:
-      
-      Text: ${text}`;
-      
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: prompt
-      });
-      const translated = result.text?.trim() || "";
-      
-      res.json({ translatedText: translated });
-    } catch (error: any) {
-      console.error("Tafsir translation error:", error);
-      res.status(500).json({ error: "Failed to translate Tafsir" });
-    }
-  });
-
-  // Hadith Search API
-  app.post("/api/hadith-search", async (req, res) => {
-    const { query, language } = req.body;
-    
-    if (!process.env.GEMINI_API_KEY) {
-      return res.status(500).json({ error: "GEMINI_API_KEY is not set on the server" });
-    }
-
-    const systemInstruction = `
-      You are a specialized Hadith scholar assistant.
-      Your task is to find authentic Hadiths based on user keywords.
-      When a user provides keywords in Kurdish (Sorani), Arabic, or English, search for the most relevant authentic Hadiths.
-      Always provide the Arabic text of the Hadith, followed by the translation in the user's preferred language (${language === 'ku' ? 'Kurdish Sorani' : language === 'ar' ? 'Arabic' : 'English'}).
-      Include the source (e.g., Sahih Bukhari, Sahih Muslim, etc.) and the Hadith number if available.
-      If the authenticity is discussed by scholars, mention it briefly (e.g., Sahih, Hasan).
-      Format the output in clean Markdown.
-      Use Google Search grounding to ensure the Hadiths are accurate and well-sourced.
-    `;
-
-    try {
-      const result = await ai.models.generateContent({
-        model: "gemini-3-flash-preview",
-        contents: `Search for Hadiths related to: "${query}"`,
-        config: {
-          systemInstruction,
-          tools: [{ googleSearch: {} }]
-        }
-      });
-      
-      const responseText = result.text?.trim() || "No results found.";
-      res.json({ text: responseText });
-    } catch (error: any) {
-      console.error("Hadith search error:", error);
-      res.status(500).json({ error: "Failed to search Hadiths" });
-    }
-  });
-
-  // 5. Firebase and Environment Diagnostics Health-Check API
-  app.get("/api/test-firebase", async (req, res) => {
-    const diagnostics: Record<string, any> = {
-      timestamp: new Date().toISOString(),
-      nodeEnv: process.env.NODE_ENV || "development",
-      geminiApiKeyConfigured: !!process.env.GEMINI_API_KEY,
-      geminiApiKeyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
-      firebaseConfigPresent: false,
-      firebaseConfigKeys: [] as string[],
-      firebaseConfigValidation: {} as Record<string, any>
-    };
-
-    try {
-      const fs = await import("fs");
-      const configPath = path.join(process.cwd(), "firebase-applet-config.json");
-      if (fs.existsSync(configPath)) {
-        const fileContent = fs.readFileSync(configPath, "utf-8");
-        const configData = JSON.parse(fileContent);
-        if (configData && typeof configData === "object" && Object.keys(configData).length > 0) {
-          diagnostics.firebaseConfigPresent = true;
-          diagnostics.firebaseConfigKeys = Object.keys(configData);
-          diagnostics.firebaseConfigValidation = {
-            hasProjectId: !!configData.projectId,
-            projectId: configData.projectId,
-            hasApiKey: !!configData.apiKey,
-            apiKeyLength: configData.apiKey ? configData.apiKey.length : 0,
-            apiKeyPrefixMatches: configData.apiKey ? configData.apiKey.startsWith("AIzaSy") : false,
-            hasAuthDomain: !!configData.authDomain,
-            hasAppId: !!configData.appId
-          };
-        }
-      } else {
+  try {
+    const fs = await import("fs");
+    const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+    if (fs.existsSync(configPath)) {
+      const fileContent = fs.readFileSync(configPath, "utf-8");
+      const configData = JSON.parse(fileContent);
+      if (configData && typeof configData === "object" && Object.keys(configData).length > 0) {
+        diagnostics.firebaseConfigPresent = true;
+        diagnostics.firebaseConfigKeys = Object.keys(configData);
         diagnostics.firebaseConfigValidation = {
-          error: "firebase-applet-config.json file does not exist in the root working directory."
+          hasProjectId: !!configData.projectId,
+          projectId: configData.projectId,
+          hasApiKey: !!configData.apiKey,
+          apiKeyLength: configData.apiKey ? configData.apiKey.length : 0,
+          apiKeyPrefixMatches: configData.apiKey ? configData.apiKey.startsWith("AIzaSy") : false,
+          hasAuthDomain: !!configData.authDomain,
+          hasAppId: !!configData.appId
         };
       }
-    } catch (e: any) {
+    } else {
       diagnostics.firebaseConfigValidation = {
-        error: `Could not parse firebase-applet-config.json: ${e.message}`
+        error: "firebase-applet-config.json file does not exist in the root working directory."
       };
     }
+  } catch (e: any) {
+    diagnostics.firebaseConfigValidation = {
+      error: `Could not parse firebase-applet-config.json: ${e.message}`
+    };
+  }
 
-    res.json(diagnostics);
-  });
+  res.json(diagnostics);
+});
 
+// Async Initialization routine for Dev server setup (Vite middleware)
+// For production, we serve from the compiled React distribution bundle statically safely
+async function initializeBundler() {
   if (process.env.NODE_ENV !== "production") {
+    const { createServer: createViteServer } = await import("vite");
     const vite = await createViteServer({
       server: { middlewareMode: true },
       appType: "spa",
     });
     app.use(vite.middlewares);
   } else {
-    app.use(express.static(path.join(__dirname, "dist")));
+    // Elegant, absolute path resolution using process.cwd() to solve all Vercel root directory shifts
+    const distPath = path.join(process.cwd(), "dist");
+    app.use(express.static(distPath));
     app.get("*", (req, res) => {
-      res.sendFile(path.join(__dirname, "dist", "index.html"));
+      res.sendFile(path.join(distPath, "index.html"));
     });
   }
-
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`Server running on http://localhost:${PORT}`);
-  });
 }
 
-startServer();
+// Call configuration setup
+initializeBundler().then(() => {
+  // Guard the active port binding: Do not call listen inside serverless environments (e.g. Vercel)
+  // which manages execution handlers, but start listening in standard Node environments or Cloud Run
+  const isServerless = !!process.env.VERCEL || !!process.env.AWS_LAMBDA;
+  if (!isServerless) {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`Server loaded successfully and running locally on port ${PORT}`);
+    });
+  }
+});
+
+// Export default app for serverless platforms like Vercel to load and map
+export default app;
