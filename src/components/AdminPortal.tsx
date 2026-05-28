@@ -1264,7 +1264,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                                   <div className="truncate max-w-[150px] sm:max-w-xs text-left">
                                     <div className="flex items-center gap-2">
                                       <span className="font-bold text-slate-300 group-hover:text-white transition-colors block text-sm truncate" title={u.id}>
-                                        بەندەی اللە
+                                        بەندەی اللە #{u.userNo || 'N/A'}
                                       </span>
                                       {online ? (
                                         <span className="flex h-2 w-2 relative shrink-0">
@@ -1347,7 +1347,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                               : (language === 'ku' ? 'ئۆفلاینی دوور' : 'OFFLINE')}
                           </span>
                           <h4 className="font-black text-lg text-white truncate max-w-[200px]" title={selectedUser.id}>
-                            بەندەی اللە
+                            بەندەی اللە #{selectedUser.userNo || 'N/A'}
                           </h4>
                           <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
                             {language === 'ku' ? 'مۆبایلی تۆمارکراو بەجیا' : 'SECURE NODE ID'}

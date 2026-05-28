@@ -4,12 +4,15 @@
  * content to the console to assist in development/debugging.
  */
 export async function apiFetch<T = any>(url: string, options?: RequestInit): Promise<T> {
+  const absoluteUrl = typeof window !== 'undefined' ? new URL(url, window.location.origin).href : url;
+  console.log(`[apiFetch Debug] Starting request to relative: "${url}" -> Absolute URL targets: "${absoluteUrl}"`);
+
   let response: Response;
   try {
     response = await fetch(url, options);
   } catch (networkError: any) {
-    console.error(`[apiFetch Network Error] Failed to connect to ${url}:`, networkError);
-    throw new Error(`Network connection error: ${networkError.message || String(networkError)}`);
+    console.error(`[apiFetch Network Error] Failed to connect to absolute URL "${absoluteUrl}" on path "${url}":`, networkError);
+    throw new Error(`Network connection error: ${networkError.message || String(networkError)}. Targets resolved URL: ${absoluteUrl}`);
   }
 
   const textContent = await response.text();

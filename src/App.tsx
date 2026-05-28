@@ -1211,7 +1211,7 @@ export default function App() {
       <ProtectedRoute
         language={language}
         onRedirect={() => {
-          setCurrentView('home');
+          setCurrentView('profile');
           setIsAdmin(false);
         }}
       >

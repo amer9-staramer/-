@@ -16,7 +16,7 @@ import {
   signOut, 
   onAuthStateChanged
 } from 'firebase/auth';
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, setDoc, runTransaction } from 'firebase/firestore';
 import { HomeFavorites } from './HomeFavorites';
 
 interface AvatarRendererProps {
@@ -712,7 +712,27 @@ export function UserProfile({
           const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
           const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
           
-          await setDoc(doc(db, 'users', cred.user.uid), {
+          let assignedNo = stats.userNo || null;
+          if (!assignedNo) {
+            try {
+              assignedNo = await runTransaction(db, async (transaction) => {
+                const globalRef = doc(db, 'global_stats', 'main');
+                const globalDoc = await transaction.get(globalRef);
+                let nextNo = 1;
+                if (globalDoc.exists()) {
+                  const gData = globalDoc.data();
+                  nextNo = ((gData.deviceCount || gData.userCount || 0) as number) + 1;
+                }
+                transaction.set(globalRef, { deviceCount: nextNo }, { merge: true });
+                return nextNo;
+              });
+            } catch (transErr) {
+              console.warn("UserNo transaction failed on registration:", transErr);
+              assignedNo = Math.floor(Math.random() * 1000) + 50;
+            }
+          }
+
+          const extendedData = {
             ...stats,
             deviceId,
             totalDhikrs,
@@ -723,8 +743,12 @@ export function UserProfile({
             profileName,
             profileImage,
             dailyGoal,
-            role: 'user'
-          }, { merge: true });
+            role: 'user',
+            userNo: assignedNo
+          };
+
+          await setDoc(doc(db, 'users', cred.user.uid), extendedData, { merge: true });
+          localStorage.setItem('user_stats', JSON.stringify(extendedData));
 
           setAuthSuccess(language === 'ku' ? '✅ هەژمارەکەت دروستکرا و نوێترین چالاکییەکانت بە سەرکەوتوویی پاشەکەوت کران!' : language === 'ar' ? '✅ تم إنشاء الحساب وربط داتا الأذكار بنجاح!' : '✅ Account created and linked successfully!');
           setEmail('');
@@ -748,7 +772,28 @@ export function UserProfile({
             // No profile found on cloud, sync local stats to cloud
             const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
             const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
-            await setDoc(doc(db, 'users', cred.user.uid), {
+            
+            let assignedNo = stats.userNo || null;
+            if (!assignedNo) {
+              try {
+                assignedNo = await runTransaction(db, async (transaction) => {
+                  const globalRef = doc(db, 'global_stats', 'main');
+                  const globalDoc = await transaction.get(globalRef);
+                  let nextNo = 1;
+                  if (globalDoc.exists()) {
+                    const gData = globalDoc.data();
+                    nextNo = ((gData.deviceCount || gData.userCount || 0) as number) + 1;
+                  }
+                  transaction.set(globalRef, { deviceCount: nextNo }, { merge: true });
+                  return nextNo;
+                });
+              } catch (transErr) {
+                console.warn("UserNo transaction failed on sign-in backup:", transErr);
+                assignedNo = Math.floor(Math.random() * 1000) + 50;
+              }
+            }
+
+            const extendedData = {
               ...stats,
               deviceId,
               totalDhikrs,
@@ -759,8 +804,13 @@ export function UserProfile({
               profileName,
               profileImage,
               dailyGoal,
-              role: 'user'
-            });
+              role: 'user',
+              userNo: assignedNo
+            };
+
+            await setDoc(doc(db, 'users', cred.user.uid), extendedData);
+            localStorage.setItem('user_stats', JSON.stringify(extendedData));
+            
             setAuthSuccess(language === 'ku' ? '✅ چوونەژوورەوە سەرکەوتوو بوو. هیچ زانیارییەک پێشتر لەسەر کلاود فۆرمات نەکرابوو، چالاکییە لۆکاڵییەکانت بۆ کلاود گواسترانەوە.' : language === 'ar' ? '✅ تسجيل الدخول ناجح! تم نقل إحصاءياتك أوفلاين وسنبداً بمزامنتها تلقائياً.' : '✅ Logged in successfully! Created new cloud backup.');
           }
           setEmail('');
