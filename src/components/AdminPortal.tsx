@@ -1276,7 +1276,7 @@ export function AdminPortal({ onBack, language, isDeviceAdmin }: { onBack: () =>
                                       )}
                                     </div>
                                     <span className={`text-[10px] font-bold block mt-0.5 ${online ? 'text-emerald-400' : 'text-slate-500'}`}>
-                                      {online ? 'ئۆنڵاین (Online)' : 'ئۆفڵاین (Offline)'}
+                                      {online ? 'ئۆنڵاین (Online)' : 'ئۆفڵاین (Offline)'} | Reg #{u.userNo || 'N/A'}
                                     </span>
                                   </div>
                                 </div>

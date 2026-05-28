@@ -19,7 +19,8 @@
         "profileName": { "type": "string" },
         "profileImage": { "type": "string" },
         "dailyGoal": { "type": "number" },
-        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user access role" }
+        "role": { "type": "string", "enum": ["user", "admin"], "description": "The user access role" },
+        "userNo": { "type": "number", "description": "The unique sequential user registration order counter" }
       },
       "required": ["points", "level", "dailyZikrsCompleted", "totalTasbihCount", "badges", "updatedAt"]
     },

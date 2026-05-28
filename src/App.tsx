@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
+import { apiFetch } from './lib/apiFetch';
 import { motion, AnimatePresence } from 'motion/react';
 import ReactMarkdown from 'react-markdown';
 import { GoogleGenAI } from "@google/genai";
@@ -702,15 +703,12 @@ export default function App() {
     
     setIsTranslating(ayahNumber);
     try {
-      const response = await fetch('/api/translate-tafsir', {
+      const data = await apiFetch('/api/translate-tafsir', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: originalText })
       });
       
-      if (!response.ok) throw new Error('Translation failed');
-      
-      const data = await response.json();
       const translation = data.translatedText;
       
       setTranslatedTafsirs(prev => ({

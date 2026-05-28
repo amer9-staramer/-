@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { doc, getDoc, setDoc, updateDoc, onSnapshot, addDoc, collection, serverTimestamp, increment } from 'firebase/firestore';
+import { doc, getDoc, setDoc, updateDoc, onSnapshot, addDoc, collection, serverTimestamp, increment, runTransaction } from 'firebase/firestore';
 import { auth, db } from '../lib/firebase';
 import { onAuthStateChanged, signInAnonymously } from 'firebase/auth';
 import { handleFirestoreError, OperationType } from '../lib/firestore-errors';
@@ -14,6 +14,7 @@ export interface UserStats {
   badges: string[];
   updatedAt?: string;
   joinedAt?: string;
+  userNo?: number;
   history?: {
     date: string; // YYYY-MM-DD
     zikrs: number;
@@ -115,7 +116,8 @@ export function useUserStats() {
   const syncWithFirestore = async () => {
     if (!syncId) return;
     try {
-      const userDoc = await getDoc(doc(db, 'users', syncId));
+      const userDocRef = doc(db, 'users', syncId);
+      const userDoc = await getDoc(userDocRef);
       const totalDhikrs = stats.totalTasbihCount + stats.totalZikrsCompleted;
       const currentLevel = Math.min(100, Math.max(1, Math.floor(Math.sqrt(totalDhikrs * 1.5)) + 1));
 
@@ -123,6 +125,34 @@ export function useUserStats() {
       const profileImage = localStorage.getItem('profile_image') || '';
       const dailyGoalStr = localStorage.getItem('profile_daily_goal') || '100';
       const dailyGoal = parseInt(dailyGoalStr);
+
+      let userNumber: number | null = null;
+      if (userDoc.exists()) {
+        const firestoreData = userDoc.data() as any;
+        if (typeof firestoreData.userNo === 'number') {
+          userNumber = firestoreData.userNo;
+        }
+      }
+
+      if (userNumber === null) {
+        // Increment global device counts / user counts via runTransaction to assign stable registration position
+        try {
+          userNumber = await runTransaction(db, async (transaction) => {
+            const globalRef = doc(db, 'global_stats', 'main');
+            const globalDoc = await transaction.get(globalRef);
+            let nextNo = 1;
+            if (globalDoc.exists()) {
+              const gData = globalDoc.data();
+              nextNo = ((gData.deviceCount || gData.userCount || 0) as number) + 1;
+            }
+            transaction.set(globalRef, { deviceCount: nextNo }, { merge: true });
+            return nextNo;
+          });
+        } catch (transErr) {
+          console.warn("UserNo allocation transaction failed, fallback to sequential counting:", transErr);
+          userNumber = Math.floor(Math.random() * 1000) + 50;
+        }
+      }
 
       const defaultPayload = {
         ...stats,
@@ -134,7 +164,8 @@ export function useUserStats() {
         updatedAt: new Date().toISOString(),
         profileName,
         profileImage,
-        dailyGoal
+        dailyGoal,
+        userNo: userNumber
       };
 
       if (userDoc.exists()) {
@@ -156,21 +187,16 @@ export function useUserStats() {
           setStats(prev => ({
             ...prev,
             ...firestoreData,
-            history: firestoreData.history || prev.history || []
+            history: firestoreData.history || prev.history || [],
+            userNo: userNumber
           }));
         } else {
           await setDoc(doc(db, 'users', syncId), defaultPayload, { merge: true });
+          setStats(prev => ({ ...prev, userNo: userNumber }));
         }
       } else {
-        // Increment global device counts if guest
-        if (syncId === deviceId) {
-          const globalRef = doc(db, 'global_stats', 'main');
-          await setDoc(globalRef, {
-            deviceCount: increment(1)
-          }, { merge: true }).catch((e) => console.warn("Failed to increment deviceCount:", e));
-        }
-
         await setDoc(doc(db, 'users', syncId), defaultPayload);
+        setStats(prev => ({ ...prev, userNo: userNumber }));
       }
     } catch (err) {
       console.warn("Firestore syncing failed (offline or unauthenticated):", err);
@@ -206,7 +232,8 @@ export function useUserStats() {
             updatedAt: new Date().toISOString(),
             profileName,
             profileImage,
-            dailyGoal
+            dailyGoal,
+            userNo: stats.userNo || null
           }, { merge: true });
         } catch (err) {
           console.warn("Firestore save failed (offline or unauthenticated):", err);

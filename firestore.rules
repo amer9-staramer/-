@@ -39,6 +39,7 @@ service cloud.firestore {
              (!('profileName' in data) || data.profileName is string) &&
              (!('profileImage' in data) || data.profileImage is string) &&
              (!('dailyGoal' in data) || data.dailyGoal is number) &&
+             (!('userNo' in data) || data.userNo is number) &&
              (!('role' in data) || (data.role is string && (data.role == 'user' || data.role == 'admin')));
     }
 

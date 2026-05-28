@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from 'react';
+import { apiFetch } from '../lib/apiFetch';
 import { motion, AnimatePresence } from 'motion/react';
 import { 
   User, Camera, Trophy, Sparkles, BookOpen, Calendar, HelpCircle, 
@@ -414,8 +415,7 @@ export function UserProfile({
 
   const fetchAdminUsers = async () => {
     try {
-      const resp = await fetch('/api/secure/admin-users');
-      const data = await resp.json();
+      const data = await apiFetch('/api/secure/admin-users');
       setAdminUsers(data.users || []);
       setAdminRawJson(JSON.stringify(data, null, 2));
     } catch (err) {
@@ -436,15 +436,11 @@ export function UserProfile({
     setSecRegisterResult(null);
 
     try {
-      const resp = await fetch('/api/secure/register', {
+      const data = await apiFetch('/api/secure/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: secEmail, password: secPassword }),
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data.error || 'Registration failed');
-      }
       setSecRegisterResult(data);
       setSecSuccess(language === 'ku' ? '✅ بەکارهێنەر بە سەرکەوتوویی لە داتابەیس تۆمارکرا!' : language === 'ar' ? '✅ تم تسجيل المستخدم بأمان في قاعدة البيانات!' : '✅ User securely registered in backend database!');
       setSecEmail('');
@@ -464,15 +460,11 @@ export function UserProfile({
     setSecSuccess(null);
 
     try {
-      const resp = await fetch('/api/secure/request-otp', {
+      const data = await apiFetch('/api/secure/request-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: recoveryEmail }),
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data.error || 'OTP request failed');
-      }
       setSecSuccess(language === 'ku' 
         ? `🔑 کۆدی یەکبارە (OTP): [${data.otpCode}] دروستکرا! نێردرا بۆ ئیمەیڵی بەکارهێنەر.`
         : `🔑 تم توليد رمز الـ OTP بنجاح: [${data.otpCode}]! تم إرساله مبرمجاً كبريد إلكتروني.`
@@ -492,7 +484,7 @@ export function UserProfile({
     setSecSuccess(null);
 
     try {
-      const resp = await fetch('/api/secure/verify-otp', {
+      const data = await apiFetch('/api/secure/verify-otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -501,10 +493,6 @@ export function UserProfile({
           newPassword: recoveryNewPassword
         }),
       });
-      const data = await resp.json();
-      if (!resp.ok) {
-        throw new Error(data.error || 'OTP verification failed');
-      }
       setSecSuccess(language === 'ku'
         ? '🎉 پاسپۆرت گۆڕدرا! کۆدی OTP بە سەرکەوتوویی بەکارهێنرا و یەکسەر سڕایەوە بۆ پاراستنی ئاسایش.'
         : '🎉 تم تصفير كلمة المرور! رمز الـ OTP تم تدميره فوراً لمنع أي هجوم مستقبلي.'
@@ -1510,7 +1498,7 @@ export function UserProfile({
             className="space-y-6"
           >
             {/* 1. Cloud Infrastructure Overview Status Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className={`grid grid-cols-1 md:grid-cols-2 ${typeof stats.userNo === 'number' ? 'lg:grid-cols-5' : 'lg:grid-cols-4'} gap-4`}>
               <div className="p-5 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-2xl flex items-center gap-4 relative overflow-hidden shadow-sm">
                 <div className={`p-3.5 rounded-2xl ${isOnline ? 'bg-emerald-500/10 text-emerald-500' : 'bg-rose-500/10 text-rose-500'}`}>
                   <Wifi size={20} className={isOnline ? 'animate-pulse' : ''} />
@@ -1572,6 +1560,22 @@ export function UserProfile({
                   </span>
                 </div>
               </div>
+
+              {typeof stats.userNo === 'number' && (
+                <div className="p-5 bg-white dark:bg-slate-900 border border-slate-150 dark:border-slate-800 rounded-2xl flex items-center gap-4 relative overflow-hidden shadow-sm">
+                  <div className="p-3.5 rounded-2xl bg-indigo-500/10 text-indigo-500">
+                    <Trophy size={20} className="animate-bounce" />
+                  </div>
+                  <div>
+                    <span className="text-[10px] font-bold text-slate-400 block uppercase tracking-wider">
+                      {language === 'ku' ? 'ڕیزبەندی ئەندامێتی' : language === 'ar' ? 'ترتيب العضوية' : 'Membership Rank'}
+                    </span>
+                    <span className="text-xs font-black text-indigo-600 dark:text-indigo-400 pt-0.5 block">
+                      #{stats.userNo}
+                    </span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Error and Success Alerts */}
