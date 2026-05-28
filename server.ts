@@ -262,6 +262,51 @@ async function startServer() {
     }
   });
 
+  // 5. Firebase and Environment Diagnostics Health-Check API
+  app.get("/api/test-firebase", async (req, res) => {
+    const diagnostics: Record<string, any> = {
+      timestamp: new Date().toISOString(),
+      nodeEnv: process.env.NODE_ENV || "development",
+      geminiApiKeyConfigured: !!process.env.GEMINI_API_KEY,
+      geminiApiKeyLength: process.env.GEMINI_API_KEY ? process.env.GEMINI_API_KEY.length : 0,
+      firebaseConfigPresent: false,
+      firebaseConfigKeys: [] as string[],
+      firebaseConfigValidation: {} as Record<string, any>
+    };
+
+    try {
+      const fs = await import("fs");
+      const configPath = path.join(process.cwd(), "firebase-applet-config.json");
+      if (fs.existsSync(configPath)) {
+        const fileContent = fs.readFileSync(configPath, "utf-8");
+        const configData = JSON.parse(fileContent);
+        if (configData && typeof configData === "object" && Object.keys(configData).length > 0) {
+          diagnostics.firebaseConfigPresent = true;
+          diagnostics.firebaseConfigKeys = Object.keys(configData);
+          diagnostics.firebaseConfigValidation = {
+            hasProjectId: !!configData.projectId,
+            projectId: configData.projectId,
+            hasApiKey: !!configData.apiKey,
+            apiKeyLength: configData.apiKey ? configData.apiKey.length : 0,
+            apiKeyPrefixMatches: configData.apiKey ? configData.apiKey.startsWith("AIzaSy") : false,
+            hasAuthDomain: !!configData.authDomain,
+            hasAppId: !!configData.appId
+          };
+        }
+      } else {
+        diagnostics.firebaseConfigValidation = {
+          error: "firebase-applet-config.json file does not exist in the root working directory."
+        };
+      }
+    } catch (e: any) {
+      diagnostics.firebaseConfigValidation = {
+        error: `Could not parse firebase-applet-config.json: ${e.message}`
+      };
+    }
+
+    res.json(diagnostics);
+  });
+
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
